@@ -13,13 +13,25 @@ namespace Skate
 		public static int deviceWidth, deviceHeight, screenWidth, screenHeight;
 		Vector2 screenScale;
 		RenderTarget2D mainRenderTarget;
-		TouchCollection touchCollection = new TouchCollection();
+		TouchCollection touchCollection, touchCollectionPrev = new TouchCollection();
+		Dictionary<int, Vector2> touchInitialPositions = new Dictionary<int, Vector2>();
 		public static Texture2D pixel;
 		Camera camera = new Camera(Vector2.Zero, 1);
 		Random rand = new Random();
 		Player player;
-		List<Solid> solids = new List<Solid>();
+		List<Platform> platforms = new List<Platform>();
+		List<Slope> slopes = new List<Slope>();
 		public static float gravity = 1f;
+		float friction = .98f;
+		public enum TouchAction
+		{
+			None,
+			SwipeLeft,
+			SwipeRight,
+			SwipeUp,
+			SwipeDown,
+			Touch
+		}
 
 		public Game1()
 		{
@@ -57,8 +69,7 @@ namespace Skate
 		private void InitializeNewGame()
 		{
 			player = new Player(Content.Load<Texture2D>("guy"));
-
-			solids.Add(new Solid(new Point(player.Rectangle.Left, 200), new Point(player.Rectangle.Left + 400, 200)));
+			platforms.Add(new Platform(0, new Rectangle(0, 400, 800, 40), Platform.Type.Rectangle));
 		}
 
 		protected override void UnloadContent()
@@ -75,65 +86,72 @@ namespace Skate
 		{
 			touchCollection = TouchPanel.GetState();
 
+			switch (GetTouchAction())
+			{
+				case TouchAction.None:
+					break;
+				case TouchAction.SwipeLeft:
+					break;
+				case TouchAction.SwipeRight:
+					break;
+				case TouchAction.SwipeUp:
+					break;
+				case TouchAction.SwipeDown:
+					break;
+				case TouchAction.Touch:
+					if (player.onGround)
+						player.movement.Y = -25;
+					break;
+				default:
+					break;
+			}
+
 			GenerateTerrain();
-
-
-			PlayerCollisionsCalculation();
 
 			player.Update();
 
+			MoveObject(ref player.position, player.Rectangle, ref player.movement, ref player.onGround, player.onGroundPrev, ref player.slope, ref player.onSlope, player.bounceFactor, ref player.platform, ref player.platformPrev, player.fallThrough);
+
 			camera.pos = player.Centre;
 			camera.Update(rand);
+			touchCollectionPrev = touchCollection;
 			base.Update(gameTime);
 		}
 
 		private void GenerateTerrain()
 		{
-			if (solids[solids.Count - 1].b.X <= camera.rectangle.Right)
-				solids.Add(new Solid(solids[solids.Count - 1].b, solids[solids.Count - 1].b + new Point(rand.Next(200), rand.Next(100) - 50)));
-		}
-
-		private void PlayerCollisionsCalculation()
-		{
-			if(player.onGround && player.solidRef != -1)
+			if (platforms[platforms.Count - 1].rectangle.Right <= camera.rectangle.Right + 40)
 			{
-				if(LineIntersectsRect(solids[player.solidRef].a.ToVector2(), solids[player.solidRef].b.ToVector2(), new Rectangle(player.Rectangle.X, player.Rectangle.Y, player.Rectangle.Width, player.Rectangle.Height + 1)))
+				if (rand.Next(4) == 0)
 				{
-					player.onGround = false;
-					player.solidRef = -1;
+					int height = rand.Next(240) + 40;
+					int width = rand.Next(100) + 100;
+					slopes.Add(new Slope(new Rectangle(platforms[platforms.Count - 1].rectangle.Right - width, platforms[platforms.Count - 1].rectangle.Y - height, width, height), true));
+					platforms.Add(new Platform(platforms.Count, new Rectangle(platforms[platforms.Count - 1].rectangle.Right + 1, platforms[platforms.Count - 1].rectangle.Y - height, rand.Next(400) + 500, 40), Platform.Type.Rectangle));
 				}
 				else
-				{
-					player.angle = (float)Math.Atan(solids[player.solidRef].k);
-				}
-			}
-
-			for (int i = 0; i < solids.Count; i++)
-			{
-				if(solids[i].b.X < camera.rectangle.X)
-				{
-					solids.RemoveAt(i);
-					i--;
-
-					if(player.solidRef > i)
-					{
-						player.solidRef--;
-					}
-				}
-
-				if(!player.onGround)
-				{
-					if (LineIntersectsRect(solids[i].a.ToVector2(), solids[i].b.ToVector2(), player.Rectangle))
-					{
-						player.SetGround(true);
-						player.SetContactYPos(solids[i].GetY(player.Centre.X));
-						player.solidRef = i;
-					}
-				}
+					platforms.Add(new Platform(platforms.Count, new Rectangle(platforms[platforms.Count - 1].rectangle.Right + 1, platforms[platforms.Count - 1].rectangle.Y, rand.Next(400) + 500, 40), Platform.Type.Rectangle));
 			}
 		}
 
+		private TouchAction GetTouchAction()
+		{
+			if (touchCollection.Count > touchCollectionPrev.Count)
+			{
+				for (int i = 0; i < touchCollection.Count; i++)
+				{
 
+				}
+				return TouchAction.Touch;
+			}
+			else if (touchCollection.Count < touchCollectionPrev.Count)
+			{
+
+			}
+			else
+				return TouchAction.None;
+		}
+		
 		/// <summary>
 		/// This is called when the game should draw itself.
 		/// </summary>
@@ -157,19 +175,492 @@ namespace Skate
 
 			spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.None, null, null, camera.get_transformation(GraphicsDevice));
 
-
-			for (int i = 0; i < solids.Count; i++)
+			for (int i = 0; i < platforms.Count; i++)
 			{
-				solids[i].Draw(spriteBatch);
+				platforms[i].Draw(spriteBatch);
 			}
 
+			for (int i = 0; i < slopes.Count; i++)
+			{
+				slopes[i].Draw(spriteBatch);
+			}
 
 			player.Draw(spriteBatch);
 
 			spriteBatch.End();
 		}
 
+		/// <summary>
+		/// Moves an object according to a Vector2 and returns an offset for the texture (slopes)
+		/// </summary>
+		/// <param name="position">Position of the object</param>
+		/// <param name="rectangle">Rectangle of the object</param>
+		/// <param name="movement">Vector to move by</param>
+		/// <param name="onGround">OnGround bool</param>
+		/// <returns></returns>
+		public void MoveObject(ref Vector2 position, Rectangle rectangle, ref Vector2 movement, ref bool onGround, bool onGroundPrev, ref Slope slope, ref bool onSlope, float bounceFactor, ref int platformID, ref int platformIDPrev, bool fallThrough)
+		{
+			int platformPrev = platformIDPrev;
+			if (platformID != -1)
+				platformPrev = platformID;
+			onGround = false;
+			bool onSlopePrev = onSlope;
+			onSlope = false;
+			bool skip = true;
+			Vector2 oldPosition = new Vector2(position.X, position.Y);
+			Vector2 newPosition = new Vector2(position.X + movement.X, position.Y + movement.Y);
+			Rectangle oldRectangle = rectangle;
+			Rectangle newRectangle = new Rectangle(FloorAdv(newPosition.X), FloorAdv(newPosition.Y), rectangle.Width, rectangle.Height);
 
+			//Checks if we can skip the entire process
+			#region Skip
+			for (int i = 0; i < platforms.Count; i++)
+			{
+				if (newRectangle.Intersects(platforms[i].rectangle))
+				{
+					skip = false;
+					break;
+				}
+			}
+			if (skip)
+			{
+				for (int i = 0; i < slopes.Count; i++)
+				{
+					if (newRectangle.Intersects(slopes[i].rectangle))
+					{
+						skip = false;
+						break;
+					}
+				}
+			}
+			#endregion
+
+			if (!skip)
+			{
+				//Checks for collision with slopes
+				for (int j = 0; j < slopes.Count; j++)
+				{
+					if (rectangle.Intersects(slopes[j].rectangle) || Game1.LineIntersectsLine(new Vector2(slopes[j].rectangle.X, slopes[j].rectangle.Y + slopes[j].rectangle.Height), new Vector2(slopes[j].rectangle.X + slopes[j].rectangle.Width, slopes[j].rectangle.Y), oldPosition, newPosition))
+					{
+						if (slopes[j].faceRight)
+						{
+							//RIGHT
+							float anglePosition = Game1.GetAngle(new Vector2(slopes[j].rectangle.X, slopes[j].rectangle.Bottom), new Vector2(position.X + FloorAdv(movement.X) + rectangle.Width, position.Y + FloorAdv(movement.Y)));
+
+							if (Game1.LineIntersectsRect(new Vector2(slopes[j].rectangle.X, slopes[j].rectangle.Y + slopes[j].rectangle.Height), new Vector2(slopes[j].rectangle.X + slopes[j].rectangle.Width, slopes[j].rectangle.Y), newRectangle)
+								|| (onGroundPrev && movement.Y == 0 && Game1.LineIntersectsRect(new Vector2(slopes[j].rectangle.X, slopes[j].rectangle.Y + slopes[j].rectangle.Height), new Vector2(slopes[j].rectangle.X + slopes[j].rectangle.Width, slopes[j].rectangle.Y), new Rectangle((int)position.X + FloorAdv(movement.X), (int)position.Y + FloorAdv(-movement.X), rectangle.Width, rectangle.Height)))
+								|| slopes[j].angle > anglePosition
+								|| Game1.LineIntersectsLine(new Vector2(slopes[j].rectangle.X, slopes[j].rectangle.Y + slopes[j].rectangle.Height), new Vector2(slopes[j].rectangle.X + slopes[j].rectangle.Width, slopes[j].rectangle.Y), oldPosition, newPosition))
+							{
+								onSlope = true;
+								slope = slopes[j];
+								float offset = slopes[j].Function(position.X - slopes[j].rectangle.X + rectangle.Width);
+								if (offset < 0)
+									offset = -offset;
+								offset = FloorAdv(offset);
+								position.X = position.X + movement.X;
+								position.Y = slopes[j].rectangle.Y + slopes[j].rectangle.Height - offset - rectangle.Height;
+
+								if (bounceFactor == 0)
+								{
+									onGround = true;
+									platformID = slopes[j].platformID;
+									movement.Y = 0;
+								}
+								else
+								{
+									float length = movement.Length() * bounceFactor * friction * 1 / rectangle.Width * rectangle.Height;
+									if (length < 1)
+									{
+										movement = Vector2.Zero;
+									}
+									Vector2 normal = Game1.GetVector2(slopes[j].angle + MathHelper.ToRadians(90)) * movement.Length() / 2;
+									movement = new Vector2(normal.X + movement.X, normal.Y + movement.Y);
+									if (movement.X < 0)
+										movement.X *= friction * 0.8f;
+								}
+							}
+							else if (bounceFactor == 0 && onGroundPrev && movement.Y >= 0)
+							{
+								onSlope = true;
+								slope = slopes[j];
+								position.X = position.X + movement.X;
+								int offset = FloorAdv(slopes[j].Function(position.X - slopes[j].rectangle.X + rectangle.Width));
+								if (offset < 0)
+									offset = -offset;
+								offset = FloorAdv(offset);
+								position.Y = slopes[j].rectangle.Y + slopes[j].rectangle.Height - offset - rectangle.Height;
+								onGround = true;
+								platformID = slopes[j].platformID;
+								movement.Y = 0;
+							}
+						}
+						else
+						{
+							//LEFT
+							float anglePosition = Game1.GetAngle(new Vector2(slopes[j].rectangle.Right, slopes[j].rectangle.Bottom), position + new Vector2(FloorAdv(movement.X), FloorAdv(movement.Y))) + MathHelper.ToRadians(180);
+
+							if (Game1.LineIntersectsRect(new Vector2(slopes[j].rectangle.X, slopes[j].rectangle.Y), new Vector2(slopes[j].rectangle.X + slopes[j].rectangle.Width, slopes[j].rectangle.Y + slopes[j].rectangle.Height), new Rectangle((int)position.X + FloorAdv(movement.X), (int)position.Y + FloorAdv(movement.Y), rectangle.Width, rectangle.Height))
+								|| (onGroundPrev && movement.Y == 0 && Game1.LineIntersectsRect(new Vector2(slopes[j].rectangle.X, slopes[j].rectangle.Y), new Vector2(slopes[j].rectangle.X + slopes[j].rectangle.Width, slopes[j].rectangle.Y + slopes[j].rectangle.Height), new Rectangle((int)position.X + FloorAdv(movement.X), (int)position.Y + FloorAdv(movement.X), rectangle.Width, rectangle.Height)))
+								|| anglePosition > slopes[j].angle)
+							{
+								slope = slopes[j];
+								onSlope = true;
+								position.X = position.X + movement.X;
+								float offset = slopes[j].Function(position.X - slopes[j].rectangle.X);
+								if (offset > 0)
+									offset = -offset;
+								offset = FloorAdv(offset);
+								position.Y = slopes[j].rectangle.Y - offset - rectangle.Height;
+
+								if (bounceFactor == 0)
+								{
+									onGround = true;
+									platformID = slopes[j].platformID;
+									movement.Y = 0;
+								}
+								else
+								{
+									float length = movement.Length() * bounceFactor * friction * 1 / rectangle.Width * rectangle.Height;
+									if (length < 1)
+									{
+										movement = Vector2.Zero;
+									}
+									Vector2 normal = Game1.GetVector2(slopes[j].angle - MathHelper.ToRadians(90)) * movement.Length() / 2;
+									movement = new Vector2(normal.X + movement.X, normal.Y + movement.Y);
+									if (movement.X > 0)
+										movement.X *= friction * 0.8f;
+								}
+							}
+							else if (bounceFactor == 0 && onGroundPrev && movement.Y >= 0)
+							{
+								slope = slopes[j];
+								onSlope = true;
+								position.X = position.X + movement.X;
+								float offset = (float)Math.Floor(slopes[j].Function(position.X - slopes[j].rectangle.X));
+								if (offset > 0)
+									offset = -offset;
+								offset = FloorAdv(offset);
+								position.Y = slopes[j].rectangle.Y - offset - rectangle.Height;
+								onGround = true;
+								platformID = slopes[j].platformID;
+								movement.Y = 0;
+							}
+						}
+					}
+					else if (new Rectangle(FloorAdv(newPosition.X), FloorAdv(newPosition.Y + 1), rectangle.Width, rectangle.Height).Intersects(slopes[j].rectangle))
+					{
+						if ((slopes[j].faceRight && rectangle.Right >= slopes[j].rectangle.Right) || (!slopes[j].faceRight && rectangle.Left <= slopes[j].rectangle.Left))
+						{
+							onGround = true;
+							platformID = slopes[j].platformID;
+							movement.Y = 0;
+						}
+					}
+				}
+
+
+				//Checks for collisions with normal rectangles
+				for (int j = 0; j < platforms.Count; j++)
+				{
+					if (new Rectangle(FloorAdv(oldPosition.X), FloorAdv(newPosition.Y), rectangle.Width, rectangle.Height).Intersects(platforms[j].rectangle) && platforms[j].type == Platform.Type.Rectangle)
+					{
+						if (movement.Y > 0 && rectangle.Bottom - platforms[j].rectangle.Y < movement.Y)
+						{
+							position.Y = platforms[j].rectangle.Y - rectangle.Height;
+							onGround = true;
+							platformID = j;
+						}
+						else if (movement.Y < 0)
+						{
+							position.Y = platforms[j].rectangle.Y + platforms[j].rectangle.Height;
+						}
+						if (bounceFactor <= 0)
+							movement.Y = 0;
+						else
+						{
+							movement.Y = movement.Y * bounceFactor * -1;
+						}
+					}
+					else if (movement.Y != 0)
+					{
+						onGround = false;
+					}
+					else if (new Rectangle(FloorAdv(oldPosition.X), FloorAdv(newPosition.Y + 1), rectangle.Width, rectangle.Height).Intersects(platforms[j].rectangle))
+					{
+						onGround = true;
+						platformID = j;
+					}
+
+					if (new Rectangle(FloorAdv(newPosition.X), FloorAdv(oldPosition.Y), rectangle.Width, rectangle.Height).Intersects(platforms[j].rectangle) && platforms[j].type == Platform.Type.Rectangle)
+					{
+						if (movement.X > 0 && (rectangle.Right - platforms[j].rectangle.X) / 2 < movement.X)
+						{
+							position.X = platforms[j].rectangle.X - rectangle.Width;
+						}
+						else if (movement.X < 0 && (platforms[j].rectangle.Right - rectangle.X) / 2 < Math.Abs(movement.X))
+						{
+							position.X = platforms[j].rectangle.X + platforms[j].rectangle.Width;
+						}
+
+						if (bounceFactor <= 0)
+						{
+							movement.X = 0;
+						}
+						else
+						{
+							movement.X = movement.X * bounceFactor * -1;
+						}
+
+						if (movement.Y > 0)
+							movement.Y *= friction;
+					}
+					else if (platforms[j].rectangle.Intersects(new Rectangle(FloorAdv(newPosition.X), FloorAdv(oldPosition.Y), rectangle.Width + 1, rectangle.Height)) && platforms[j].type == Platform.Type.Rectangle)
+					{
+						if (bounceFactor <= 0)
+						{
+							movement.X = 0;
+						}
+						else
+						{
+							movement.X = movement.X = movement.X * bounceFactor * -1;
+						}
+					}
+					else if (platforms[j].rectangle.Intersects(new Rectangle(FloorAdv(newPosition.X - 1), FloorAdv(oldPosition.Y), rectangle.Width + 1, rectangle.Height)) && platforms[j].type == Platform.Type.Rectangle)
+					{
+						if (bounceFactor <= 0)
+						{
+							movement.X = 0;
+						}
+						else
+						{
+							movement.X = movement.X = movement.X * bounceFactor * -1;
+						}
+					}
+				}
+
+
+				//Checks for collision with jump-through rectangles
+				for (int j = 0; j < platforms.Count; j++)
+				{
+					if (newRectangle.Intersects(platforms[j].rectangle) && platforms[j].type == Platform.Type.JumpThrough && !fallThrough)
+					{
+						if (oldRectangle.Bottom - 1 < platforms[j].rectangle.Y && movement.Y > 0 && rectangle.Center.Y < platforms[j].rectangle.Center.Y)
+						{
+							position.Y = platforms[j].rectangle.Y - rectangle.Height;
+							movement.Y = 0;
+							onGround = true;
+							platformID = j;
+						}
+					}
+				}
+			}
+			else
+			{
+				if (movement.Y >= 0)
+				{
+					for (int i = 0; i < platforms.Count; i++)
+					{
+						if (new Rectangle((int)(newPosition.X), (int)(newPosition.Y + 1), rectangle.Width, rectangle.Height).Intersects(platforms[i].rectangle) && (platforms[i].type == Platform.Type.Rectangle || !fallThrough))
+						{
+							onGround = true;
+							platformID = i;
+							movement.Y = 0;
+							position.Y = platforms[i].rectangle.Y - rectangle.Height;
+							break;
+						}
+					}
+
+
+					for (int i = 0; i < slopes.Count; i++)
+					{
+						if (slopes[i].faceRight)
+						{
+							if (Game1.LineIntersectsRect(new Vector2(slopes[i].rectangle.X, slopes[i].rectangle.Y + slopes[i].rectangle.Height), new Vector2(slopes[i].rectangle.X + slopes[i].rectangle.Width, slopes[i].rectangle.Y), new Rectangle((int)position.X + FloorAdv(movement.X), (int)position.Y + 1, rectangle.Width, rectangle.Height)))
+							{
+								onGround = true;
+								movement.Y = 0;
+								//platformID = i;
+							}
+						}
+						else
+						{
+							if (Game1.LineIntersectsRect(new Vector2(slopes[i].rectangle.X, slopes[i].rectangle.Y), new Vector2(slopes[i].rectangle.X + slopes[i].rectangle.Width, slopes[i].rectangle.Y + slopes[i].rectangle.Height), new Rectangle((int)position.X + FloorAdv(movement.X), (int)position.Y + 1, rectangle.Width, rectangle.Height)))
+							{
+								onGround = true;
+								movement.Y = 0;
+								//platformID = i;
+							}
+						}
+					}
+				}
+
+				for (int i = 0; i < platforms.Count; i++)
+				{
+					if (platforms[i].type == Platform.Type.Rectangle)
+					{
+						if (platforms[i].rectangle.Intersects(new Rectangle(FloorAdv(newPosition.X), FloorAdv(oldPosition.Y), rectangle.Width + 1, rectangle.Height)))
+						{
+							if (bounceFactor <= 0)
+							{
+								movement.X = 0;
+							}
+							else
+							{
+								movement.X = movement.X = movement.X * bounceFactor * -1;
+							}
+						}
+						else if (platforms[i].rectangle.Intersects(new Rectangle(FloorAdv(newPosition.X - 1), FloorAdv(oldPosition.Y), rectangle.Width + 1, rectangle.Height)))
+						{
+							if (bounceFactor <= 0)
+							{
+								movement.X = 0;
+							}
+							else
+							{
+								movement.X = movement.X = movement.X * bounceFactor * -1;
+							}
+						}
+					}
+				}
+			}
+			if (onSlopePrev && !onSlope)
+				movement.Y = -slope.k * movement.X;
+
+			position += movement;
+			platformIDPrev = platformPrev;
+		}
+
+		/// <summary>
+		/// Floors the given number, reverses if negative
+		/// </summary>
+		/// <param name="number"></param>
+		/// <returns></returns>
+		public static int FloorAdv(float number)
+		{
+			if (number < 0)
+				return (int)Math.Ceiling(number);
+			else
+				return (int)Math.Floor(number);
+		}
+
+		public static Vector2 GetVector2(float angle)
+		{
+			return new Vector2((float)Math.Cos(angle), -(float)Math.Sin(angle));
+		}
+
+		/// <summary>
+		/// Returns a resulting vector, pointing from v0 to v1
+		/// </summary>
+		/// <param name="v0">Source</param>
+		/// <param name="v1">Target</param>
+		/// <returns></returns>
+		public static Vector2 GetVector2(Vector2 v0, Vector2 v1)
+		{
+			return new Vector2(v1.X - v0.X, v1.Y - v0.Y);
+		}
+
+		/// <summary>
+		/// Returns a resulting vector, pointing from v0 to v1
+		/// </summary>
+		/// <param name="v0">Source</param>
+		/// <param name="v1">Target</param>
+		/// <returns></returns>
+		public static Vector2 GetVector2(Point v0, Point v1)
+		{
+			return new Vector2(v1.X - v0.X, v1.Y - v0.Y);
+		}
+
+		/// <summary>
+		/// Draw a line between two Point positions in a chosen color
+		/// </summary>
+		/// <param name="spriteBatch"></param>
+		/// <param name="point0"></param>
+		/// <param name="point1"></param>
+		/// <param name="color"></param>
+		public static void DrawLine(SpriteBatch spriteBatch, Vector2 v0, Vector2 v1, Color color, float thickness)
+		{
+			float length = Vector2.Distance(v0, v1);
+			float deg = 0;
+			bool possible = true;
+
+			if (v0.ToPoint() == v1.ToPoint())
+				possible = false;
+
+			deg = (float)Math.Atan2(v1.Y - v0.Y, v1.X - v0.X);
+
+			if (possible)
+			{
+				spriteBatch.Draw(pixel, v0, null, color, deg, Vector2.Zero, new Vector2(length, thickness), SpriteEffects.None, 0f);
+			}
+		}
+
+		/// <summary>
+		/// Draws a rectangle with the given color
+		/// </summary>
+		/// <param name="spriteBatch"></param>
+		/// <param name="rectangle"></param>
+		/// <param name="color"></param>
+		public static void DrawRectangle(SpriteBatch spriteBatch, Rectangle rectangle, Color color)
+		{
+			DrawLine(spriteBatch, new Vector2(rectangle.X, rectangle.Y), new Vector2(rectangle.X + rectangle.Width, rectangle.Y), color, 8);
+			DrawLine(spriteBatch, new Vector2(rectangle.X + rectangle.Width, rectangle.Y), new Vector2(rectangle.X + rectangle.Width, rectangle.Y + rectangle.Height), color, 8);
+			DrawLine(spriteBatch, new Vector2(rectangle.X, rectangle.Y + rectangle.Height), new Vector2(rectangle.X + rectangle.Width, rectangle.Y + rectangle.Height), color, 8);
+			DrawLine(spriteBatch, new Vector2(rectangle.X, rectangle.Y), new Vector2(rectangle.X, rectangle.Y + rectangle.Height), color, 8);
+		}
+
+		/// <summary>
+		/// AngleBetween - the angle between 2 vectors
+		/// </summary>
+		/// <returns>
+		/// Returns the the angle in degrees between vector1 and vector2
+		/// </returns>
+		/// <param name="vector1"> The first Vector </param>
+		/// <param name="vector2"> The second Vector </param>
+		public static float GetAngle(Vector2 a, Vector2 b)
+		{
+			if (a.X == b.X)
+			{
+				if (a.Y - b.Y < 0)
+					return MathHelper.ToRadians(270);
+				else
+					return MathHelper.ToRadians(90);
+			}
+			else if (a.Y == b.Y)
+			{
+				if (a.X - b.X < 0)
+					return MathHelper.ToRadians(0);
+				else
+					return MathHelper.ToRadians(180);
+			}
+			else
+				return (float)(Math.Atan2(b.X - a.X, b.Y - a.Y));
+		}
+
+		public static float GetAngle(Vector2 vector)
+		{
+			return (float)Math.Tanh(vector.Y / vector.X);
+		}
+
+		public static float GetAngle(Point a, Point b)
+		{
+			if (a.X == b.X)
+			{
+				if (a.Y - b.Y < 0)
+					return MathHelper.ToRadians(270);
+				else
+					return MathHelper.ToRadians(90);
+			}
+			else if (a.Y == b.Y)
+			{
+				if (a.X - b.X < 0)
+					return MathHelper.ToRadians(0);
+				else
+					return MathHelper.ToRadians(180);
+			}
+			else
+				return (float)(Math.Atan((a.Y - b.Y) / (b.X - a.X)) + MathHelper.ToRadians(360)) % MathHelper.ToRadians(360);
+		}
 
 		/// <summary>
 		/// Checks if a line intersects a rectangle
