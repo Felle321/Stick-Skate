@@ -15,6 +15,7 @@ namespace Skate
 		RenderTarget2D mainRenderTarget;
 		TouchCollection touchCollection, touchCollectionPrev = new TouchCollection();
 		Dictionary<int, Vector2> touchInitialPositions = new Dictionary<int, Vector2>();
+		Dictionary<int, int> touchStationaryTimer = new Dictionary<int, int>();
 		public static Texture2D pixel;
 		Camera camera = new Camera(Vector2.Zero, 1);
 		Random rand = new Random();
@@ -23,6 +24,7 @@ namespace Skate
 		List<Slope> slopes = new List<Slope>();
 		public static float gravity = 1f;
 		float friction = .98f;
+		SpriteFont fontDebug;
 		public enum TouchAction
 		{
 			None,
@@ -30,8 +32,12 @@ namespace Skate
 			SwipeRight,
 			SwipeUp,
 			SwipeDown,
-			Touch
+			Touch,
+			Hold
 		}
+
+		float debugLastAngle = 0f;
+		TouchAction debugLastSwipe = TouchAction.None;
 
 		public Game1()
 		{
@@ -42,14 +48,12 @@ namespace Skate
 			graphics.IsFullScreen = true;
 			graphics.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
 		}
-		
 
 		protected override void Initialize()
 		{
 
 			base.Initialize();
 		}
-		
 
 		protected override void LoadContent()
 		{
@@ -59,9 +63,10 @@ namespace Skate
 			mainRenderTarget = new RenderTarget2D(GraphicsDevice, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight);
 			deviceWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width;
 			deviceHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height;
-			screenScale.X = deviceWidth / screenWidth;
-			screenScale.Y = deviceHeight / screenHeight;
+			screenScale.X = deviceWidth / (float)screenWidth;
+			screenScale.Y = deviceHeight / (float)screenHeight;
 			pixel = Content.Load<Texture2D>("pixel");
+			fontDebug = Content.Load<SpriteFont>("font_debug");
 
 			InitializeNewGame();
 		}
@@ -91,16 +96,21 @@ namespace Skate
 				case TouchAction.None:
 					break;
 				case TouchAction.SwipeLeft:
+					debugLastSwipe = TouchAction.SwipeLeft;
+
+					if (player.onGround)
+						player.speed += 3;
 					break;
 				case TouchAction.SwipeRight:
+					debugLastSwipe = TouchAction.SwipeRight;
 					break;
 				case TouchAction.SwipeUp:
+					debugLastSwipe = TouchAction.SwipeUp;
 					break;
 				case TouchAction.SwipeDown:
+					debugLastSwipe = TouchAction.SwipeDown;
 					break;
 				case TouchAction.Touch:
-					if (player.onGround)
-						player.movement.Y = -25;
 					break;
 				default:
 					break;
@@ -136,20 +146,93 @@ namespace Skate
 
 		private TouchAction GetTouchAction()
 		{
-			if (touchCollection.Count > touchCollectionPrev.Count)
+			TouchAction touchAction = TouchAction.None;
+
+			for (int i = 0; i < touchCollection.Count; i++)
 			{
-				for (int i = 0; i < touchCollection.Count; i++)
+				//Getting prev touch and getting a TouchAction.Touch
+				int touchPrev = -1;
+				for (int j = 0; j < touchCollectionPrev.Count; j++)
 				{
-
+					if (touchCollection[i].Id == touchCollectionPrev[j].Id)
+					{
+						touchPrev = j;
+						break;
+					}
 				}
-				return TouchAction.Touch;
-			}
-			else if (touchCollection.Count < touchCollectionPrev.Count)
-			{
 
+				//An absence of a previous touch would indicate a new touchposition (for swipes)
+				if (touchPrev == -1)
+				{
+					touchStationaryTimer.Add(touchCollection[i].Id, 0);
+					touchInitialPositions.Add(touchCollection[i].Id, touchCollection[i].Position);
+					return TouchAction.Touch;
+				}
+				else
+				{
+					//A touch is "held down" and the touchAction will be .Hold until further changes
+					touchAction = TouchAction.Hold;
+
+					if(Vector2.Distance(touchInitialPositions[touchCollectionPrev[i].Id], touchCollectionPrev[i].Position) > 350 * screenScale.Length())
+					{
+						touchInitialPositions[touchCollectionPrev[i].Id] = GetMidpoint(touchInitialPositions[touchCollectionPrev[i].Id], touchCollectionPrev[i].Position);
+					}
+
+					if (touchStationaryTimer[touchCollection[i].Id] > 5)
+					{
+						touchStationaryTimer[touchCollection[i].Id] = 0;
+						touchInitialPositions[touchCollection[i].Id] = touchCollection[i].Position;
+					}
+
+					//Reset positions if touch is stationary for too long
+					if (Vector2.Distance(touchCollection[i].Position, touchCollectionPrev[touchPrev].Position) < 20 * screenScale.Length())
+					{
+						touchStationaryTimer[touchCollection[i].Id]++;
+					}
+					else
+					{
+						touchStationaryTimer[touchCollection[i].Id] = 0;
+					}
+				}
 			}
-			else
-				return TouchAction.None;
+
+			for (int i = 0; i < touchCollectionPrev.Count; i++)
+			{
+				//Getting prev touch and getting a TouchAction.Touch
+				int touchCurrent = -1;
+				for (int j = 0; j < touchCollection.Count; j++)
+				{
+					if (touchCollection[j].Id == touchCollectionPrev[i].Id)
+					{
+						touchCurrent = j;
+						break;
+					}
+				}
+
+				//This would indicate a swipe
+				if (touchCurrent == -1)
+				{
+					if(Vector2.Distance(touchInitialPositions[touchCollectionPrev[i].Id], touchCollectionPrev[i].Position) > 30 * screenScale.Length())
+					{
+						float angle = MathHelper.ToDegrees(GetAngle(touchInitialPositions[touchCollectionPrev[i].Id], touchCollectionPrev[i].Position));
+						debugLastAngle = angle;
+						touchInitialPositions.Remove(touchCollectionPrev[i].Id);
+						touchStationaryTimer.Remove(touchCollectionPrev[i].Id);
+
+						if (angle < 45
+							|| angle >= 315)
+							return TouchAction.SwipeRight;
+						else if (angle >= 45 && angle < 135)
+							return TouchAction.SwipeUp;
+						else if (angle >= 135 && angle < 215)
+							return TouchAction.SwipeLeft;
+						else if (angle >= 215 && angle < 315)
+							return TouchAction.SwipeDown;
+					}
+				}
+			}
+
+			return touchAction;
 		}
 		
 		/// <summary>
@@ -159,6 +242,8 @@ namespace Skate
 		protected override void Draw(GameTime gameTime)
 		{
 			DrawGame();
+
+			DrawHUD();
 
 			GraphicsDevice.SetRenderTarget(null);
 			GraphicsDevice.Clear(Color.Red);
@@ -187,7 +272,34 @@ namespace Skate
 
 			player.Draw(spriteBatch);
 
+
 			spriteBatch.End();
+		}
+
+		protected void DrawHUD()
+		{
+			spriteBatch.Begin();
+
+			DrawTouches();
+
+			spriteBatch.DrawString(fontDebug, "Ground: " + player.onGround.ToString(), new Vector2(600, 50), Color.Black);
+			spriteBatch.DrawString(fontDebug, "Slope: " + player.onSlope.ToString(), new Vector2(600, 100), Color.Black);
+
+			spriteBatch.End();
+		}
+
+		private void DrawTouches()
+		{
+			spriteBatch.DrawString(fontDebug, debugLastAngle.ToString(), new Vector2(30, 50), Color.Black);
+			spriteBatch.DrawString(fontDebug, debugLastSwipe.ToString(), new Vector2(30, 100), Color.Black);
+			
+			for (int i = 0; i < touchCollectionPrev.Count; i++)
+			{
+				spriteBatch.DrawString(fontDebug, touchCollectionPrev[i].Position.ToString(), new Vector2(30, 150 + i * 50), Color.Black);
+
+				if (touchInitialPositions.ContainsKey(touchCollectionPrev[i].Id))
+					DrawLine(spriteBatch, touchInitialPositions[touchCollectionPrev[i].Id] / screenScale, touchCollectionPrev[i].Position / screenScale, Color.Blue, 5);
+			}
 		}
 
 		/// <summary>
@@ -532,6 +644,17 @@ namespace Skate
 		}
 
 		/// <summary>
+		/// Returns the point in the middle of two vector2 positions
+		/// </summary>
+		/// <param name="point0"></param>
+		/// <param name="point1"></param>
+		/// <returns></returns>
+		public static Vector2 GetMidpoint(Vector2 point0, Vector2 point1)
+		{
+			return new Vector2((point0.X + point1.X) / 2, (point0.Y + point1.Y) / 2);
+		}
+
+		/// <summary>
 		/// Floors the given number, reverses if negative
 		/// </summary>
 		/// <param name="number"></param>
@@ -634,32 +757,24 @@ namespace Skate
 					return MathHelper.ToRadians(180);
 			}
 			else
-				return (float)(Math.Atan2(b.X - a.X, b.Y - a.Y));
+			{
+				float angle = (float)(Math.Atan2(-(b.Y - a.Y), b.X - a.X));
+
+				if (angle < 0)
+					angle += (float)Math.PI * 2;
+
+				return angle;
+			}
 		}
 
 		public static float GetAngle(Vector2 vector)
 		{
-			return (float)Math.Tanh(vector.Y / vector.X);
+			return GetAngle(Vector2.Zero, vector);
 		}
 
 		public static float GetAngle(Point a, Point b)
 		{
-			if (a.X == b.X)
-			{
-				if (a.Y - b.Y < 0)
-					return MathHelper.ToRadians(270);
-				else
-					return MathHelper.ToRadians(90);
-			}
-			else if (a.Y == b.Y)
-			{
-				if (a.X - b.X < 0)
-					return MathHelper.ToRadians(0);
-				else
-					return MathHelper.ToRadians(180);
-			}
-			else
-				return (float)(Math.Atan((a.Y - b.Y) / (b.X - a.X)) + MathHelper.ToRadians(360)) % MathHelper.ToRadians(360);
+			return GetAngle(a.ToVector2(), b.ToVector2());
 		}
 
 		/// <summary>

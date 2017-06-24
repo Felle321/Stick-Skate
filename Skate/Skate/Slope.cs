@@ -16,7 +16,6 @@ namespace Skate
 		public bool faceRight;
 		public float angle;
 		public float k = 0;
-		float angleCos, angleSin;
 		public int platformID = -1;
 
 		public Slope(Rectangle newRect, bool faceRight)
@@ -25,16 +24,14 @@ namespace Skate
 			this.faceRight = faceRight;
 			if (faceRight)
 			{
-				angle = Game1.GetAngle(new Vector2(rectangle.Width, rectangle.Height));
+				angle = (float)Math.Tanh(rectangle.Height / rectangle.Width);
 			}
 			else
 			{
-				angle = Game1.GetAngle(new Vector2(rectangle.X + rectangle.Width, rectangle.Y + rectangle.Height), new Vector2(rectangle.X, rectangle.Y)) + MathHelper.ToRadians(180);
+				angle = MathHelper.ToRadians(180) - (float)Math.Tanh(rectangle.Height / rectangle.Width);
 			}
 
 			k = rectangle.Height / ((float)rectangle.Width);
-			angleCos = (float)Math.Cos(angle);
-			angleSin = (float)Math.Sin(angle);
 		}
 
 		public void Draw(SpriteBatch spriteBatch)
