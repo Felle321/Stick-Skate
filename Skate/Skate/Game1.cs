@@ -36,6 +36,17 @@ namespace Skate
 			Hold
 		}
 
+		Combo combo = new Combo();
+		List<Trick> trickQueue = new List<Trick>();
+
+		int jumpCharge = 0;
+		int jumpChargeMax = 30;
+		int jumpStrength = 30;
+
+		int score = 0;
+		string lastTrick = "";
+		int lastScore = 0;
+
 		float debugLastAngle = 0f;
 		TouchAction debugLastSwipe = TouchAction.None;
 
@@ -75,6 +86,7 @@ namespace Skate
 		{
 			player = new Player(Content.Load<Texture2D>("guy"));
 			platforms.Add(new Platform(0, new Rectangle(0, 400, 800, 40), Platform.Type.Rectangle));
+			score = 0;
 		}
 
 		protected override void UnloadContent()
@@ -91,26 +103,99 @@ namespace Skate
 		{
 			touchCollection = TouchPanel.GetState();
 
+			if (player.onGround)
+			{
+				if (trickQueue.Count > 1)
+				{
+					//LOSE
+				}
+				else if(trickQueue.Count == 1)
+				{
+					if(trickQueue[0].totalFrames - trickQueue[0].frame < 10)
+					{
+						combo.lastTrickEnd = combo.time + trickQueue[0].totalFrames - trickQueue[0].frame;
+					}
+					else
+					{
+						//LOSE
+					}
+				}
+
+				score += combo.Finish();
+				trickQueue.Clear();
+			}
+			else
+			{
+				if (trickQueue.Count > 0)
+				{
+					if (trickQueue[0].frame == trickQueue[0].totalFrames)
+					{
+						combo.lastScore = trickQueue[0].GetScore();
+						combo.tricks.Add(trickQueue[0].GetName());
+						combo.score += combo.lastScore;
+						combo.multiplier++;
+						combo.availibleSpeed += trickQueue[0].GetSpeed();
+						combo.lastTrickEnd = combo.time;
+						combo.lastQuality = trickQueue[0].quality.ToString();
+						trickQueue.RemoveAt(0);
+					}
+					else
+					{
+						trickQueue[0].Update();
+					}
+				}
+
+				jumpCharge = 0;
+			}
+
 			switch (GetTouchAction())
 			{
 				case TouchAction.None:
+					if(player.onGround)
+					{
+						if (jumpCharge > 0.2f * jumpChargeMax)
+						{
+							jumpCharge = 0;
+							player.movement.Y = -jumpStrength * (jumpCharge / jumpChargeMax);
+						}
+					}
 					break;
 				case TouchAction.SwipeLeft:
 					debugLastSwipe = TouchAction.SwipeLeft;
 
+					jumpCharge = 0;
+
 					if (player.onGround)
 						player.speed += 3;
+					else
+					{
+						PerformTrickFlip();
+					}
+
 					break;
 				case TouchAction.SwipeRight:
 					debugLastSwipe = TouchAction.SwipeRight;
+
+					if (!player.onGround)
+					{
+						PerformTrickGrab();
+					}
 					break;
 				case TouchAction.SwipeUp:
 					debugLastSwipe = TouchAction.SwipeUp;
+
 					break;
 				case TouchAction.SwipeDown:
 					debugLastSwipe = TouchAction.SwipeDown;
+
+					if (!player.onGround)
+					{
+						PerformTrickGrind();
+					}
 					break;
 				case TouchAction.Touch:
+					if (jumpCharge < jumpChargeMax)
+						jumpCharge++;
 					break;
 				default:
 					break;
@@ -118,14 +203,64 @@ namespace Skate
 
 			GenerateTerrain();
 
+			combo.Update();
+
+			UpdatePlayerState();
+
 			player.Update();
 
 			MoveObject(ref player.position, player.Rectangle, ref player.movement, ref player.onGround, player.onGroundPrev, ref player.slope, ref player.onSlope, player.bounceFactor, ref player.platform, ref player.platformPrev, player.fallThrough);
-
+			
 			camera.pos = player.Centre;
 			camera.Update(rand);
 			touchCollectionPrev = touchCollection;
 			base.Update(gameTime);
+		}
+
+		private void UpdatePlayerState()
+		{
+			if (trickQueue.Count == 0)
+			{
+				if (player.onGround || player.onSlope)
+					player.state = Player.State.Ground;
+				else
+					player.state = Player.State.Air;
+			}
+			else if (!player.grind)
+				player.state = Player.State.Trick;
+			else
+				player.state = Player.State.Grind;
+		}
+
+		public void PerformTrickFlip()
+		{
+			Trick.FlipTricks trick = Trick.FlipTricks.Kickflip;
+
+			if(!player.onGround)
+			{
+				if(trickQueue.Count == 1)
+				{
+					trickQueue.Add(new Trick.Flip(trick, trickQueue[0].GetTimingMultiplier()));
+				}
+				else if(trickQueue.Count == 0)
+				{
+					trickQueue.Add(new Trick.Flip(trick, combo.GetTimingMultiplier()));
+				}
+				else
+				{
+					//BALANCE PENALTY
+				}
+			}
+		}
+
+		public void PerformTrickGrab()
+		{
+
+		}
+
+		public void PerformTrickGrind()
+		{
+
 		}
 
 		private void GenerateTerrain()
@@ -280,12 +415,32 @@ namespace Skate
 		{
 			spriteBatch.Begin();
 
-			DrawTouches();
+			//DrawTouches();
 
 			spriteBatch.DrawString(fontDebug, "Ground: " + player.onGround.ToString(), new Vector2(600, 50), Color.Black);
 			spriteBatch.DrawString(fontDebug, "Slope: " + player.onSlope.ToString(), new Vector2(600, 100), Color.Black);
 
+			DrawCombo();
+
 			spriteBatch.End();
+		}
+
+		private void DrawCombo()
+		{
+			if (combo.tricks.Count > 0)
+			{
+				spriteBatch.DrawString(fontDebug, combo.tricks[combo.tricks.Count - 1].ToString(), new Vector2(30, 50), Color.Black);
+				spriteBatch.DrawString(fontDebug, combo.lastQuality.ToString(), new Vector2(30, 100), Color.Black);
+				spriteBatch.DrawString(fontDebug, player.state.ToString(), new Vector2(30, 150), Color.Black);
+				spriteBatch.DrawString(fontDebug, combo.lastScore.ToString(), new Vector2(30, 220), Color.Black);
+				spriteBatch.DrawString(fontDebug, combo.score.ToString(), new Vector2(30, 270), Color.Black);
+				spriteBatch.DrawString(fontDebug, combo.multiplier.ToString(), new Vector2(30, 320), Color.Black);
+
+				for (int i = 0; i < combo.tricks.Count; i++)
+				{
+					spriteBatch.DrawString(fontDebug, combo.tricks[i], new Vector2(30, 400 + i * 50), Color.Black);
+				}
+			}
 		}
 
 		private void DrawTouches()

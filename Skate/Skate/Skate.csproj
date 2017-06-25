@@ -61,7 +61,6 @@
     <Compile Include="Activity1.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="Combo.cs" />
-    <Compile Include="ComboEvent.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="Platform.cs" />
     <Compile Include="Player.cs" />

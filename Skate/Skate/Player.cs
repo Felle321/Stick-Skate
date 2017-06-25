@@ -26,13 +26,23 @@ namespace Skate
 		int offset = 0;
 		public float speed = 25f;
 		public Vector2 movement;
-		public bool onGround, onGroundPrev, onSlope, fallThrough = false;
+		public bool onGround, onGroundPrev, onSlope, grind, fallThrough = false;
 		public Slope slope;
 		public int solidRef, platform, platformPrev;
 		public float angle = 0f;
 		public float bounceFactor = 0f;
 		int minSpeed = 8;
 		public Color color = Color.Black;
+
+		public enum State
+		{
+			Ground,
+			Air,
+			Trick,
+			Grind
+		}
+
+		public State state = State.Air;
 
 		public Texture2D texture;
 
