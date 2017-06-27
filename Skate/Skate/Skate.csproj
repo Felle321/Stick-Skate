@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Activity1.cs" />
+    <Compile Include="Animation.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="Combo.cs" />
     <Compile Include="Game1.cs" />
@@ -67,6 +68,8 @@
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Slope.cs" />
+    <Compile Include="Sprite.cs" />
+    <Compile Include="SpriteHandler.cs" />
     <Compile Include="Trick.cs" />
   </ItemGroup>
   <ItemGroup>

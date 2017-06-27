@@ -88,6 +88,10 @@ namespace Skate
 			spriteBatch.Draw(texture, new Vector2(Centre.X, Rectangle.Bottom - offset), null, color, angle, new Vector2(texture.Width / 2, texture.Height), 1f, SpriteEffects.None, 0f);
 		}
 
+		/// <summary>
+		/// Sets the position of the player(texture) relative to the point of contact
+		/// </summary>
+		/// <param name="y"></param>
 		internal void SetContactYPos(float y)
 		{
 			position.Y = y - texture.Height - offset;

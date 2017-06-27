@@ -40,8 +40,8 @@ namespace Skate
 		List<Trick> trickQueue = new List<Trick>();
 
 		int jumpCharge = 0;
-		int jumpChargeMax = 30;
-		int jumpStrength = 30;
+		int jumpChargeMax = 40;
+		int jumpStrength = 25;
 
 		int score = 0;
 		string lastTrick = "";
@@ -105,24 +105,31 @@ namespace Skate
 
 			if (player.onGround)
 			{
-				if (trickQueue.Count > 1)
+				if (!player.onGroundPrev)
 				{
-					//LOSE
-				}
-				else if(trickQueue.Count == 1)
-				{
-					if(trickQueue[0].totalFrames - trickQueue[0].frame < 10)
-					{
-						combo.lastTrickEnd = combo.time + trickQueue[0].totalFrames - trickQueue[0].frame;
-					}
-					else
+					if (trickQueue.Count > 1)
 					{
 						//LOSE
 					}
-				}
+					else if (trickQueue.Count == 1)
+					{
+						if (trickQueue[0].totalFrames - trickQueue[0].frame < 10)
+						{
+							combo.lastTrickEnd = combo.time + trickQueue[0].totalFrames - trickQueue[0].frame;
+						}
+						else
+						{
+							//LOSE
+						}
+					}
 
-				score += combo.Finish();
-				trickQueue.Clear();
+					score += combo.Finish();
+					trickQueue.Clear();
+				}
+				else
+				{
+
+				}
 			}
 			else
 			{
@@ -151,12 +158,13 @@ namespace Skate
 			switch (GetTouchAction())
 			{
 				case TouchAction.None:
-					if(player.onGround)
+					if(player.state == Player.State.Ground || player.state == Player.State.Grind)
 					{
 						if (jumpCharge > 0.2f * jumpChargeMax)
 						{
+							player.movement.Y = -jumpStrength * (jumpCharge / (float)jumpChargeMax);
+							player.onSlope = false;
 							jumpCharge = 0;
-							player.movement.Y = -jumpStrength * (jumpCharge / jumpChargeMax);
 						}
 					}
 					break;
@@ -194,7 +202,9 @@ namespace Skate
 					}
 					break;
 				case TouchAction.Touch:
-					if (jumpCharge < jumpChargeMax)
+					break;
+				case TouchAction.Hold:
+					if (jumpCharge < jumpChargeMax && player.onGround)
 						jumpCharge++;
 					break;
 				default:
@@ -211,7 +221,7 @@ namespace Skate
 
 			MoveObject(ref player.position, player.Rectangle, ref player.movement, ref player.onGround, player.onGroundPrev, ref player.slope, ref player.onSlope, player.bounceFactor, ref player.platform, ref player.platformPrev, player.fallThrough);
 			
-			camera.pos = player.Centre;
+			camera.pos = player.Centre + new Vector2(200, -100);
 			camera.Update(rand);
 			touchCollectionPrev = touchCollection;
 			base.Update(gameTime);
@@ -407,6 +417,7 @@ namespace Skate
 
 			player.Draw(spriteBatch);
 
+			DrawRectangle(spriteBatch, player.Rectangle, Color.Red);
 
 			spriteBatch.End();
 		}
@@ -415,12 +426,13 @@ namespace Skate
 		{
 			spriteBatch.Begin();
 
-			//DrawTouches();
+			DrawTouches();
 
 			spriteBatch.DrawString(fontDebug, "Ground: " + player.onGround.ToString(), new Vector2(600, 50), Color.Black);
 			spriteBatch.DrawString(fontDebug, "Slope: " + player.onSlope.ToString(), new Vector2(600, 100), Color.Black);
+			spriteBatch.DrawString(fontDebug, "JumpCharge: " + jumpCharge.ToString(), new Vector2(600, 150), Color.Black);
 
-			DrawCombo();
+			//DrawCombo();
 
 			spriteBatch.End();
 		}
@@ -447,10 +459,11 @@ namespace Skate
 		{
 			spriteBatch.DrawString(fontDebug, debugLastAngle.ToString(), new Vector2(30, 50), Color.Black);
 			spriteBatch.DrawString(fontDebug, debugLastSwipe.ToString(), new Vector2(30, 100), Color.Black);
-			
+			spriteBatch.DrawString(fontDebug, GetTouchAction().ToString(), new Vector2(30, 150), Color.Black);
+
 			for (int i = 0; i < touchCollectionPrev.Count; i++)
 			{
-				spriteBatch.DrawString(fontDebug, touchCollectionPrev[i].Position.ToString(), new Vector2(30, 150 + i * 50), Color.Black);
+				spriteBatch.DrawString(fontDebug, touchCollectionPrev[i].Position.ToString(), new Vector2(30, 200 + i * 50), Color.Black);
 
 				if (touchInitialPositions.ContainsKey(touchCollectionPrev[i].Id))
 					DrawLine(spriteBatch, touchInitialPositions[touchCollectionPrev[i].Id] / screenScale, touchCollectionPrev[i].Position / screenScale, Color.Blue, 5);
@@ -817,6 +830,19 @@ namespace Skate
 		public static int FloorAdv(float number)
 		{
 			if (number < 0)
+				return (int)Math.Ceiling(number);
+			else
+				return (int)Math.Floor(number);
+		}
+		
+		/// <summary>
+		/// Raises the given number to the nearest int, reversed if negative
+		/// </summary>
+		/// <param name="number"></param>
+		/// <returns></returns>
+		public static int CeilAdv(float number)
+		{
+			if (number > 0)
 				return (int)Math.Ceiling(number);
 			else
 				return (int)Math.Floor(number);
