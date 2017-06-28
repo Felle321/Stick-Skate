@@ -23,7 +23,6 @@ namespace Skate
 				return position + new Vector2(width / 2, height / 2);
 			}
 		}
-		int offset = 0;
 		public float speed = 25f;
 		public Vector2 movement;
 		public bool onGround, onGroundPrev, onSlope, grind, fallThrough = false;
@@ -33,6 +32,8 @@ namespace Skate
 		public float bounceFactor = 0f;
 		int minSpeed = 8;
 		public Color color = Color.Black;
+		public Vector2 textureOffset = Vector2.Zero;
+		public Vector2 boardOffset = Vector2.Zero;
 
 		public enum State
 		{
@@ -85,24 +86,12 @@ namespace Skate
 
 		public void Draw(SpriteBatch spriteBatch)
 		{
-			spriteBatch.Draw(texture, new Vector2(Centre.X, Rectangle.Bottom - offset), null, color, angle, new Vector2(texture.Width / 2, texture.Height), 1f, SpriteEffects.None, 0f);
-		}
-
-		/// <summary>
-		/// Sets the position of the player(texture) relative to the point of contact
-		/// </summary>
-		/// <param name="y"></param>
-		internal void SetContactYPos(float y)
-		{
-			position.Y = y - texture.Height - offset;
+			spriteBatch.Draw(texture, new Vector2(Centre.X, Rectangle.Bottom), null, color, angle, new Vector2(texture.Width / 2, texture.Height), 1f, SpriteEffects.None, 0f);
 		}
 
 		internal void SetGround(bool ground)
 		{
 			this.onGround = ground;
-
-			if (ground)
-				offset = 0;
 		}
 	}
 }
