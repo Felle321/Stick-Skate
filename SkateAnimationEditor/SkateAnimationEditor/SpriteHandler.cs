@@ -25,6 +25,18 @@ namespace SkateAnimationEditor
 		}
 
 		/// <summary>
+		/// Sets some basic info about the sprite
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="speed"></param>
+		/// <param name="scale"></param>
+		public static void SetInfo(string key, float speed, float scale)
+		{
+			sprites[key].speed = speed;
+			sprites[key].scale = scale;
+		}
+
+		/// <summary>
 		/// Draws the sprite with the given key
 		/// </summary>
 		/// <param name="key">The key which decides what sprite to be used</param>
@@ -49,6 +61,11 @@ namespace SkateAnimationEditor
 		public static void Draw(string key, SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, SpriteEffects spriteEffect, float depth)
 		{
 			sprites[key].Draw(spriteBatch, camera, position, vector2Scale, spriteEffect, depth);
+		}
+
+		internal static void SetSpeed()
+		{
+			throw new NotImplementedException();
 		}
 
 		/// <summary>

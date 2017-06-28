@@ -113,7 +113,12 @@ namespace SkateAnimationEditor
 			for (int i = 0; i < frames.Count; i++)
 			{
 				framesTotal += frames[i];
+				if (frames[i] > 1)
+					animated = true;
 			}
+
+			if (frames.Count > 1)
+				animated = true;
 		}
 
 		#region WithoutAnimation

@@ -16,22 +16,24 @@ namespace SkateAnimationEditor
 				return new Rectangle((int)Math.Round(position.X), (int)Math.Round(position.Y), width, height);
 			}
 		}
-		public Color color = Color.Black;
 
 		//AnimationHandling
 		public PlayerAnimations playerAnimations = new PlayerAnimations();
 		public Board board;
 
-		string animationKey = "";
-		Vector2 textureOffset = Vector2.Zero;
-		Vector2 wheelOffset = Vector2.Zero;
-		Animation animation, animationWheels;
-		float animationSpeedPrev = 0;
+		public string animationKey = "";
+		public Vector2 textureOffset = Vector2.Zero;
+		public Vector2 wheelOffset = Vector2.Zero;
+		public Vector2 textureOrigin = Vector2.Zero;
+		public Vector2 wheelOrigin = Vector2.Zero;
+		public Animation animation, animationWheels;
+		public float animationSpeedPrev = 0;
+		
+		public bool animationFreeze = false;
 
-		Vector2 simpleBoardOffset = new Vector2(-10, 20);
-		bool drawSimpleBoard, animationFreeze = false;
-		string simpleBoard = "";
+		public float angle = 0;
 
+		Color color = Color.Black;
 		Color wheelColor = Color.White;
 
 		public enum State
@@ -47,14 +49,13 @@ namespace SkateAnimationEditor
 		public Player(string deck, string tape, string simpleBoard)
 		{
 			board = new Board(deck, tape);
-			this.simpleBoard = simpleBoard;
+			board.simpleBoard = simpleBoard;
 		}
 
 		public void Update()
 		{
 			board.Update((int)Math.Floor(animation.currentFrame));
-
-			drawSimpleBoard = board.simpleBoard;
+			
 			if (board.animationFreeze && !animationFreeze)
 			{
 				animationSpeedPrev = animation.speed;
@@ -68,31 +69,43 @@ namespace SkateAnimationEditor
 
 		public void Draw(SpriteBatch spriteBatch, Camera camera)
 		{
-			animation.Draw(spriteBatch, camera, position + textureOffset, SpriteEffects.None, 0f);
-
-			if (drawSimpleBoard)
-				SpriteHandler.Draw(simpleBoard, spriteBatch, camera, position + simpleBoardOffset, SpriteEffects.None, 0f);
-			else
-				animationWheels.Draw(spriteBatch, camera, position + textureOffset, SpriteEffects.None, 0f);
+			animation.Draw(spriteBatch, camera, position + textureOffset, 1, angle, textureOrigin, color, 1, SpriteEffects.None, 0f);
+			
+			//if(!board.drawSimpleBoard)
+				//animationWheels.Draw(spriteBatch, camera, position + textureOffset, 1, angle, wheelOrigin, wheelColor, 1, SpriteEffects.None, 0f);
+			
+			spriteBatch.Draw(Game1.pixel, position + textureOffset + textureOrigin, null, Color.Red, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
+			//spriteBatch.Draw(Game1.pixel, position + wheelOffset + wheelOrigin, null, Color.Green, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
 		}
 
 		public void DrawBoard(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Camera camera)
 		{
-			if(!drawSimpleBoard)
-				board.Draw(spriteBatch, graphicsDevice, camera, position);
+			board.Draw(spriteBatch, graphicsDevice, camera, position, wheelColor);
+		}
+
+		public void DrawHUD(SpriteBatch spriteBatch)
+		{
+			spriteBatch.DrawString(Game1.fontDebug, "Speed: " + animation.speed, new Vector2(20, 50), Color.Black);
+			spriteBatch.DrawString(Game1.fontDebug, "Angle: " + angle, new Vector2(20, 100), Color.Black);
+			spriteBatch.DrawString(Game1.fontDebug, "Frame: " + Math.Floor(animation.currentFrame).ToString(), new Vector2(20, 200), Color.Black);
+
+			board.DrawHUD(spriteBatch);
 		}
 
 		public void SetAnimation(string key)
 		{
-			board.SetAnimation(key);
 
 			animationKey = key;
 			PlayerAnimations.ReturnValue value = playerAnimations.GetAnimation(key);
 			textureOffset = value.textureOffset;
+			textureOrigin = value.textureOrigin;
 			wheelOffset = value.wheelsOffset;
+			wheelOrigin = value.wheelsOrigin;
 			animation = value.animation;
 			animationWheels = value.animationWheels;
-			drawSimpleBoard = board.simpleBoard;
+
+			board.SetAnimation(key, (int)Math.Floor(animation.framesTotal), animation.speed);
+			
 			if (board.animationFreeze && !animationFreeze)
 			{
 				animationSpeedPrev = animation.speed;

@@ -17,15 +17,30 @@ namespace SkateAnimationEditor
 		Camera camera = new Camera(Vector2.Zero, 1.3f);
 		Random rand = new Random();
 		Player player;
-		SpriteFont fontDebug;
+		public static SpriteFont fontDebug;
+		public static Texture2D pixel;
+
+		//UI
+		KeyboardState keyboard, keyboardPrev;
+		MouseState mouse, mousePrev;
+		int editMode = 0;
 
 		public Game1()
 		{
 			graphics = new GraphicsDeviceManager(this);
 			Content.RootDirectory = "Content";
 
-			player = new Player("Deck_Default", "Tape_Default", "SimpleBoard");
+			graphics.PreferredBackBufferWidth = screenWidth;
+			graphics.PreferredBackBufferHeight = screenHeight;
 
+			keyboard = Keyboard.GetState();
+			keyboardPrev = keyboard;
+
+			mouse = Mouse.GetState();
+			mousePrev = mouse;
+
+			player = new Player("Deck_Default", "Tape_Default", "SimpleBoard");
+			
 		}
 
 		/// <summary>
@@ -52,11 +67,12 @@ namespace SkateAnimationEditor
 
 			SpriteHandler.AddSprite("SimpleBoard", new Sprite(Content.Load<Texture2D>("board")));
 			fontDebug = Content.Load<SpriteFont>("Font_Debug");
+			pixel = Content.Load<Texture2D>("pixel");
 
 			player.playerAnimations.LoadContent(Content);
 			player.board.LoadContent(Content);
 
-			player.SetAnimation("Idle");
+			player.SetAnimation("KickFlip");
 		}
 
 		/// <summary>
@@ -75,12 +91,109 @@ namespace SkateAnimationEditor
 		/// <param name="gameTime">Provides a snapshot of timing values.</param>
 		protected override void Update(GameTime gameTime)
 		{
+			mouse = Mouse.GetState();
+			keyboard = Keyboard.GetState();
+
+			#region UI
+
+			if (keyboard.IsKeyDown(Keys.Up) && keyboardPrev.IsKeyUp(Keys.Up))
+				editMode++;
+			else if (keyboard.IsKeyDown(Keys.Down) && keyboardPrev.IsKeyUp(Keys.Down))
+				editMode--;
+
+			if (keyboard.IsKeyDown(Keys.Space) && keyboardPrev.IsKeyUp(Keys.Space))
+			{
+				if(player.board.animationFreeze)
+				{
+					player.board.animationFreeze = false;
+				}
+				else
+				{
+					player.board.animationFreeze = true;
+				}
+			}
+
+			if (editMode != 4 && editMode != 5 && editMode != 6)
+			{
+				if (keyboard.IsKeyDown(Keys.Left) && player.animation.speed >= 0)
+					player.animation.speed -= 0.0005f;
+				else if (keyboard.IsKeyDown(Keys.Right))
+					player.animation.speed += 0.0005f;
+
+				if (player.animation.speed < 0)
+					player.animation.speed = 0;
+
+				if (keyboard.IsKeyDown(Keys.LeftShift))
+				{
+					if (keyboard.IsKeyDown(Keys.Left))
+						player.angle -= 0.05f;
+					else if (keyboard.IsKeyDown(Keys.Right))
+						player.angle += 0.05f;
+				}
+			}
+
+			switch (editMode)
+			{
+				case (0):
+					if (mouse.LeftButton == ButtonState.Pressed)
+					{
+						player.textureOffset += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
+					}
+					break;
+				case (1):
+					if (mouse.LeftButton == ButtonState.Pressed)
+					{
+						player.board.position += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
+					}
+					break;
+				case (2):
+					if (mouse.LeftButton == ButtonState.Pressed)
+					{
+						player.textureOrigin += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
+					}
+					break;
+				case (3):
+					if (mouse.LeftButton == ButtonState.Pressed)
+					{
+						player.board.simpleBoardOrigin += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
+					}
+					break;
+				case (4):
+					if (keyboard.IsKeyDown(Keys.Left))
+						player.board.rotationX -= 0.01f;
+					else if (keyboard.IsKeyDown(Keys.Right))
+						player.board.rotationX += 0.01f;
+					break;
+				case (5):
+					if (keyboard.IsKeyDown(Keys.Left))
+						player.board.rotationY -= 0.01f;
+					else if (keyboard.IsKeyDown(Keys.Right))
+						player.board.rotationY += 0.01f;
+					break;
+				case (6):
+					if (keyboard.IsKeyDown(Keys.Left))
+						player.board.rotationZ -= 0.01f;
+					else if (keyboard.IsKeyDown(Keys.Right))
+						player.board.rotationZ += 0.01f;
+					break;
+				default:
+					break;
+			}
+
+			#endregion
+
+
 			camera.Update(rand);
 
 			player.Update();
 
 			camera.pos = player.Rectangle.Center.ToVector2();
 
+
+
+
+			mousePrev = mouse;
+			keyboardPrev = keyboard;
 			base.Update(gameTime);
 		}
 
@@ -93,10 +206,50 @@ namespace SkateAnimationEditor
 			GraphicsDevice.Clear(Color.CornflowerBlue);
 
 			spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, camera.get_transformation(GraphicsDevice));
+
+			DrawRectangle(spriteBatch, player.Rectangle, Color.Red);
+
 			player.Draw(spriteBatch, camera);
+
 			spriteBatch.End();
 
+
 			player.DrawBoard(spriteBatch, GraphicsDevice, camera);
+
+
+			spriteBatch.Begin();
+
+			player.DrawHUD(spriteBatch);
+
+			switch (editMode)
+			{
+				case (0):
+					spriteBatch.DrawString(Game1.fontDebug, "TextureOffset: " + player.textureOffset, new Vector2(20, 150), Color.Black);
+					break;
+				case (1):
+					spriteBatch.DrawString(Game1.fontDebug, "BoardPosition: " + player.board.position.ToString(), new Vector2(20, 150), Color.Black);
+					break;
+				case (2):
+					spriteBatch.DrawString(Game1.fontDebug, "TextureOrigin: " + player.textureOrigin, new Vector2(20, 150), Color.Black);
+					break;
+				case (3):
+					spriteBatch.DrawString(Game1.fontDebug, "SimpleBoardOrigin: " + player.board.simpleBoardOrigin, new Vector2(20, 150), Color.Black);
+					break;
+				case (4):
+					spriteBatch.DrawString(Game1.fontDebug, "RotationX: " + player.board.rotationX, new Vector2(20, 150), Color.Black);
+					break;
+				case (5):
+					spriteBatch.DrawString(Game1.fontDebug, "RotationY: " + player.board.rotationY, new Vector2(20, 150), Color.Black);
+					break;
+				case (6):
+					spriteBatch.DrawString(Game1.fontDebug, "RotationZ: " + player.board.rotationZ, new Vector2(20, 150), Color.Black);
+					break;
+				default:
+					break;
+			}
+
+			spriteBatch.End();
+
 
 			base.Draw(gameTime);
 		}

@@ -18,7 +18,7 @@ namespace SkateAnimationEditor
 		public struct ReturnValue
 		{
 			public Animation animation, animationWheels;
-			public Vector2 textureOffset, wheelsOffset;
+			public Vector2 textureOffset, wheelsOffset, textureOrigin, wheelsOrigin;
 		}
 
 		public ReturnValue GetAnimation(string key)
@@ -30,20 +30,34 @@ namespace SkateAnimationEditor
 				case ("Idle"):
 					returnValue.animation = new Animation("Player_Idle", 0);
 					returnValue.animationWheels = null;
-					returnValue.textureOffset = new Vector2(-40, -40);
+					returnValue.textureOffset = new Vector2(20, 43);
+					returnValue.textureOrigin = new Vector2(32, 128);
 					returnValue.wheelsOffset = Vector2.Zero;
+					returnValue.wheelsOrigin = Vector2.Zero;
 					break;
 				case ("JumpCharge"):
 					returnValue.animation = new Animation("Player_JumpCharge", 0);
 					returnValue.animationWheels = null;
-					returnValue.textureOffset = new Vector2(-40, -40);
+					returnValue.textureOffset = new Vector2(21, 42);
+					returnValue.textureOrigin = new Vector2(32, 128);
 					returnValue.wheelsOffset = Vector2.Zero;
+					returnValue.wheelsOrigin = Vector2.Zero;
 					break;
 				case ("Jump"):
 					returnValue.animation = new Animation("Player_Jump", 0);
 					returnValue.animationWheels = null;
-					returnValue.textureOffset = new Vector2(-40, -40);
+					returnValue.textureOffset = new Vector2(21, 42);
+					returnValue.textureOrigin = new Vector2(32, 128);
 					returnValue.wheelsOffset = Vector2.Zero;
+					returnValue.wheelsOrigin = Vector2.Zero;
+					break;
+				case ("KickFlip"):
+					returnValue.animation = new Animation("Player_Jump", 0);
+					returnValue.animationWheels = null;
+					returnValue.textureOffset = new Vector2(21, 42);
+					returnValue.textureOrigin = new Vector2(32, 128);
+					returnValue.wheelsOffset = Vector2.Zero;
+					returnValue.wheelsOrigin = Vector2.Zero;
 					break;
 				default:
 					break;
@@ -58,9 +72,12 @@ namespace SkateAnimationEditor
 		/// <param name="Content"></param>
 		public void LoadContent(ContentManager Content)
 		{
-			SpriteHandler.AddSprite("Player_Idle", new Sprite(Content.Load<Texture2D>("idle"), 5, 64, 128));
+			SpriteHandler.AddSprite("Player_Idle", new Sprite(Content.Load<Texture2D>("idle"), 4, 64, 128));
+			SpriteHandler.SetInfo("Player_Idle", 0.1f, 1);
 			SpriteHandler.AddSprite("Player_Jump", new Sprite(Content.Load<Texture2D>("jump"), 10, 64, 128));
-			SpriteHandler.AddSprite("Player_JumpCharge", new Sprite(Content.Load<Texture2D>("jumpCharge"), 5, 64, 128));
+			SpriteHandler.SetInfo("Player_Jump", 0.1f, 1);
+			SpriteHandler.AddSprite("Player_JumpCharge", new Sprite(Content.Load<Texture2D>("jumpCharge"), 4, 64, 128));
+			SpriteHandler.SetInfo("Player_JumpCharge", 0.1f, 1);
 		}
 	}
 }
