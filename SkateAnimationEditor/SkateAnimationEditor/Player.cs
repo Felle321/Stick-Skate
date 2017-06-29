@@ -36,6 +36,14 @@ namespace SkateAnimationEditor
 		Color color = Color.Black;
 		Color wheelColor = Color.White;
 
+		public Vector2 ContactPos
+		{
+			get
+			{
+				return new Vector2(Rectangle.X + (float)Rectangle.Width / 2, Rectangle.Y + (float)Rectangle.Height);
+			}
+		}
+
 		public enum State
 		{
 			Ground,
@@ -54,7 +62,7 @@ namespace SkateAnimationEditor
 
 		public void Update()
 		{
-			board.Update((int)Math.Floor(animation.currentFrame));
+			board.Update(animation.currentFrame);
 			
 			if (board.animationFreeze && !animationFreeze)
 			{
@@ -69,32 +77,33 @@ namespace SkateAnimationEditor
 
 		public void Draw(SpriteBatch spriteBatch, Camera camera)
 		{
-			animation.Draw(spriteBatch, camera, position + textureOffset, 1, angle, textureOrigin, color, 1, SpriteEffects.None, 0f);
+			animation.Draw(spriteBatch, camera, ContactPos + textureOffset, 1, angle, textureOrigin, color, 1, SpriteEffects.None, 0f);
 			
 			//if(!board.drawSimpleBoard)
 				//animationWheels.Draw(spriteBatch, camera, position + textureOffset, 1, angle, wheelOrigin, wheelColor, 1, SpriteEffects.None, 0f);
 			
-			spriteBatch.Draw(Game1.pixel, position + textureOffset + textureOrigin, null, Color.Red, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
+			spriteBatch.Draw(Game1.pixel, ContactPos + textureOffset + textureOrigin, null, Color.Red, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
 			//spriteBatch.Draw(Game1.pixel, position + wheelOffset + wheelOrigin, null, Color.Green, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
-		}
 
-		public void DrawBoard(SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, Camera camera)
-		{
-			board.Draw(spriteBatch, graphicsDevice, camera, position, wheelColor);
+
+			board.Draw(ContactPos, spriteBatch, camera, position, wheelColor);
 		}
+		
 
 		public void DrawHUD(SpriteBatch spriteBatch)
 		{
 			spriteBatch.DrawString(Game1.fontDebug, "Speed: " + animation.speed, new Vector2(20, 50), Color.Black);
 			spriteBatch.DrawString(Game1.fontDebug, "Angle: " + angle, new Vector2(20, 100), Color.Black);
-			spriteBatch.DrawString(Game1.fontDebug, "Frame: " + Math.Floor(animation.currentFrame).ToString(), new Vector2(20, 200), Color.Black);
+			spriteBatch.DrawString(Game1.fontDebug, "Frame: " + (animation.currentFrame).ToString(), new Vector2(20, 150), Color.Black);
+			spriteBatch.DrawString(Game1.fontDebug, "BoardFrame: " + board.frame.ToString(), new Vector2(20, 200), Color.Black);
+			spriteBatch.DrawString(Game1.fontDebug, "KeyFrame: " + board.keyFrameActive.ToString(), new Vector2(20, 250), Color.Black);
+			spriteBatch.DrawString(Game1.fontDebug, "BoardSpeed: " + board.speed.ToString(), new Vector2(20, 300), Color.Black);
 
 			board.DrawHUD(spriteBatch);
 		}
 
 		public void SetAnimation(string key)
 		{
-
 			animationKey = key;
 			PlayerAnimations.ReturnValue value = playerAnimations.GetAnimation(key);
 			textureOffset = value.textureOffset;
@@ -104,7 +113,7 @@ namespace SkateAnimationEditor
 			animation = value.animation;
 			animationWheels = value.animationWheels;
 
-			board.SetAnimation(key, (int)Math.Floor(animation.framesTotal), animation.speed);
+			board.SetAnimation(key);
 			
 			if (board.animationFreeze && !animationFreeze)
 			{
@@ -115,6 +124,16 @@ namespace SkateAnimationEditor
 			{
 				animation.speed = animationSpeedPrev;
 			}
+		}
+
+		public string GetCommand()
+		{
+			string text = "";
+			text += "TextureOffset: " + textureOffset.ToString() + "\r\n";
+			text += "TextureOrigin: " + textureOrigin.ToString() + "\r\n";
+			text += "WheelOffset: " + wheelOffset.ToString() + "\r\n";
+			text += "WheelOrigin: " + wheelOrigin.ToString() + "\r\n";
+			return text;
 		}
 	}
 }

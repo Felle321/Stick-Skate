@@ -57,6 +57,19 @@ namespace SkateAnimationEditor
 		/// <param name="spriteBatch"></param>
 		/// <param name="camera"></param>
 		/// <param name="position">The position of the sprite</param>
+		public static void Draw(string key, SpriteBatch spriteBatch, Camera camera, Rectangle rectangle, SpriteEffects spriteEffect, float depth)
+		{
+			sprites[key].Draw(spriteBatch, camera, rectangle, spriteEffect, depth);
+		}
+
+		/// <summary>
+		/// Draws the sprite with the given key
+		/// </summary>
+		/// <param name="key">The key which decides what sprite to be used</param>
+		/// <param name="rand"></param>
+		/// <param name="spriteBatch"></param>
+		/// <param name="camera"></param>
+		/// <param name="position">The position of the sprite</param>
 		/// <param name="vector2Scale">The Vector2 scale of the sprite</param>
 		public static void Draw(string key, SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, SpriteEffects spriteEffect, float depth)
 		{

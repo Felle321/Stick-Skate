@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.IO;
 
 namespace SkateAnimationEditor
 {
@@ -95,26 +96,34 @@ namespace SkateAnimationEditor
 			keyboard = Keyboard.GetState();
 
 			#region UI
-
-			if (keyboard.IsKeyDown(Keys.Up) && keyboardPrev.IsKeyUp(Keys.Up))
-				editMode++;
-			else if (keyboard.IsKeyDown(Keys.Down) && keyboardPrev.IsKeyUp(Keys.Down))
-				editMode--;
-
-			if (keyboard.IsKeyDown(Keys.Space) && keyboardPrev.IsKeyUp(Keys.Space))
+			if(IsKeyPressed(Keys.Space))
 			{
-				if(player.board.animationFreeze)
-				{
-					player.board.animationFreeze = false;
-				}
-				else
-				{
-					player.board.animationFreeze = true;
-				}
+				player.animation.currentFrame = 0;
+				player.board.frame = 0;
 			}
 
-			if (editMode != 4 && editMode != 5 && editMode != 6)
+			if (keyboard.IsKeyDown(Keys.LeftControl))
 			{
+				if(IsKeyPressed(Keys.S))
+				{
+					SaveAnimation();
+				}
+
+				if (IsKeyPressed(Keys.Down))
+				{
+					if (player.animation.currentFrame - 1 < 0)
+						player.animation.currentFrame = player.animation.framesTotal - 1;
+					else
+						player.animation.currentFrame = (float)Math.Floor(player.animation.currentFrame) - 1;
+				}
+				else if (IsKeyPressed(Keys.Up))
+				{
+					if (player.animation.currentFrame + 1 > player.animation.framesTotal)
+						player.animation.currentFrame = 0;
+					else
+						player.animation.currentFrame = (float)Math.Floor(player.animation.currentFrame) + 1;
+				}
+
 				if (keyboard.IsKeyDown(Keys.Left) && player.animation.speed >= 0)
 					player.animation.speed -= 0.0005f;
 				else if (keyboard.IsKeyDown(Keys.Right))
@@ -122,14 +131,52 @@ namespace SkateAnimationEditor
 
 				if (player.animation.speed < 0)
 					player.animation.speed = 0;
-
-				if (keyboard.IsKeyDown(Keys.LeftShift))
+			}
+			else if(keyboard.IsKeyDown(Keys.LeftShift))
+			{
+				if (IsKeyPressed(Keys.K))
 				{
-					if (keyboard.IsKeyDown(Keys.Left))
-						player.angle -= 0.05f;
-					else if (keyboard.IsKeyDown(Keys.Right))
-						player.angle += 0.05f;
+					player.board.ApplyKeyFrame();
 				}
+
+				if (IsKeyPressed(Keys.R))
+				{
+					player.board.RemoveCurrentKeyFrame();
+				}
+
+				if (IsKeyPressed(Keys.Down))
+				{
+					if (player.board.frame - 1 < 0)
+						player.board.frame = player.board.totalFrames - 1;
+					else
+						player.board.frame = player.board.currentFrame - 1;
+
+					if (player.board.frame < 0)
+						player.board.frame = 0;
+				}
+				else if (IsKeyPressed(Keys.Up))
+				{
+					if (player.board.frame + 1 > player.board.totalFrames)
+						player.board.frame = 0;
+					else
+						player.board.frame = player.board.currentFrame + 1;
+				}
+
+				if (keyboard.IsKeyDown(Keys.Left) && player.animation.speed >= 0)
+					player.board.speed -= 0.0005f;
+				else if (keyboard.IsKeyDown(Keys.Right))
+					player.board.speed += 0.0005f;
+
+
+				if (player.board.speed < 0)
+					player.board.speed = 0;
+			}
+			else
+			{
+				if (keyboard.IsKeyDown(Keys.Up) && keyboardPrev.IsKeyUp(Keys.Up))
+					editMode++;
+				else if (keyboard.IsKeyDown(Keys.Down) && keyboardPrev.IsKeyUp(Keys.Down))
+					editMode--;
 			}
 
 			switch (editMode)
@@ -160,21 +207,45 @@ namespace SkateAnimationEditor
 					break;
 				case (4):
 					if (keyboard.IsKeyDown(Keys.Left))
-						player.board.rotationX -= 0.01f;
+						player.board.scaleX -= 0.01f;
 					else if (keyboard.IsKeyDown(Keys.Right))
-						player.board.rotationX += 0.01f;
+						player.board.scaleX += 0.01f;
+
+					if (player.board.scaleX < -1)
+						player.board.scaleX = -1;
+					else if (player.board.scaleX > 1)
+						player.board.scaleX = 1;
+
 					break;
 				case (5):
 					if (keyboard.IsKeyDown(Keys.Left))
-						player.board.rotationY -= 0.01f;
+						player.board.scaleY -= 0.01f;
 					else if (keyboard.IsKeyDown(Keys.Right))
-						player.board.rotationY += 0.01f;
+						player.board.scaleY += 0.01f;
+
+					if (player.board.scaleY < -1)
+						player.board.scaleY = -1;
+					else if (player.board.scaleY > 1)
+						player.board.scaleY = 1;
+
 					break;
 				case (6):
 					if (keyboard.IsKeyDown(Keys.Left))
-						player.board.rotationZ -= 0.01f;
+						player.board.rotation -= 0.01f;
 					else if (keyboard.IsKeyDown(Keys.Right))
-						player.board.rotationZ += 0.01f;
+						player.board.rotation += 0.01f;
+					break;
+				case (7):
+					if (IsKeyPressed(Keys.Left))
+						player.board.totalFrames--;
+					else if (IsKeyPressed(Keys.Right))
+						player.board.totalFrames++;
+					break;
+				case (8):
+					if (IsKeyPressed(Keys.Left))
+						player.board.drawSimpleBoard = false;
+					else if (IsKeyPressed(Keys.Right))
+						player.board.drawSimpleBoard = true;
 					break;
 				default:
 					break;
@@ -197,6 +268,16 @@ namespace SkateAnimationEditor
 			base.Update(gameTime);
 		}
 
+		private void SaveAnimation()
+		{
+			StreamWriter sw = new StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/animation.txt");
+
+			sw.WriteLine(player.GetCommand());
+			sw.WriteLine(player.board.GetCommand());
+			
+			sw.Close();
+		}
+
 		/// <summary>
 		/// This is called when the game should draw itself.
 		/// </summary>
@@ -213,45 +294,110 @@ namespace SkateAnimationEditor
 
 			spriteBatch.End();
 
-
-			player.DrawBoard(spriteBatch, GraphicsDevice, camera);
-
-
+			//HUD
 			spriteBatch.Begin();
 
 			player.DrawHUD(spriteBatch);
 
+			int editY = 350;
+
 			switch (editMode)
 			{
 				case (0):
-					spriteBatch.DrawString(Game1.fontDebug, "TextureOffset: " + player.textureOffset, new Vector2(20, 150), Color.Black);
+					spriteBatch.DrawString(Game1.fontDebug, "TextureOffset: " + player.textureOffset, new Vector2(20, editY), Color.Black);
 					break;
 				case (1):
-					spriteBatch.DrawString(Game1.fontDebug, "BoardPosition: " + player.board.position.ToString(), new Vector2(20, 150), Color.Black);
+					spriteBatch.DrawString(Game1.fontDebug, "BoardPosition: " + player.board.position.ToString(), new Vector2(20, editY), Color.Black);
 					break;
 				case (2):
-					spriteBatch.DrawString(Game1.fontDebug, "TextureOrigin: " + player.textureOrigin, new Vector2(20, 150), Color.Black);
+					spriteBatch.DrawString(Game1.fontDebug, "TextureOrigin: " + player.textureOrigin, new Vector2(20, editY), Color.Black);
 					break;
 				case (3):
-					spriteBatch.DrawString(Game1.fontDebug, "SimpleBoardOrigin: " + player.board.simpleBoardOrigin, new Vector2(20, 150), Color.Black);
+					spriteBatch.DrawString(Game1.fontDebug, "SimpleBoardOrigin: " + player.board.simpleBoardOrigin, new Vector2(20, editY), Color.Black);
 					break;
 				case (4):
-					spriteBatch.DrawString(Game1.fontDebug, "RotationX: " + player.board.rotationX, new Vector2(20, 150), Color.Black);
+					spriteBatch.DrawString(Game1.fontDebug, "ScaleX: " + player.board.scaleX, new Vector2(20, editY), Color.Black);
 					break;
 				case (5):
-					spriteBatch.DrawString(Game1.fontDebug, "RotationY: " + player.board.rotationY, new Vector2(20, 150), Color.Black);
+					spriteBatch.DrawString(Game1.fontDebug, "ScaleY: " + player.board.scaleY, new Vector2(20, editY), Color.Black);
 					break;
 				case (6):
-					spriteBatch.DrawString(Game1.fontDebug, "RotationZ: " + player.board.rotationZ, new Vector2(20, 150), Color.Black);
+					spriteBatch.DrawString(Game1.fontDebug, "Rotation: " + player.board.rotation, new Vector2(20, editY), Color.Black);
+					break;
+				case (7):
+					spriteBatch.DrawString(Game1.fontDebug, "BoardTotalFrames: " + player.board.totalFrames, new Vector2(20, editY), Color.Black);
+					break;
+				case (8):
+					spriteBatch.DrawString(Game1.fontDebug, "DrawSimpleBoard: " + player.board.drawSimpleBoard.ToString(), new Vector2(20, editY), Color.Black);
 					break;
 				default:
 					break;
 			}
 
 			spriteBatch.End();
-
-
+			
 			base.Draw(gameTime);
+		}
+
+		public string KeyBoardInputNumbers(string text)
+		{
+			if (IsKeyPressed(Keys.Back))
+				text.Remove(text.Length - 1, 1);
+			else
+			{
+				if (IsKeyPressed(Keys.D0))
+					text += "0";
+				if (IsKeyPressed(Keys.D1))
+					text += "1";
+				if (IsKeyPressed(Keys.D2))
+					text += "2";
+				if (IsKeyPressed(Keys.D3))
+					text += "3";
+				if (IsKeyPressed(Keys.D4))
+					text += "4";
+				if (IsKeyPressed(Keys.D5))
+					text += "5";
+				if (IsKeyPressed(Keys.D6))
+					text += "6";
+				if (IsKeyPressed(Keys.D7))
+					text += "7";
+				if (IsKeyPressed(Keys.D8))
+					text += "8";
+				if (IsKeyPressed(Keys.D9))
+					text += "9";
+				if (IsKeyPressed(Keys.OemPeriod) || IsKeyPressed(Keys.OemComma))
+					text += ".";
+			}
+
+			return text;
+		}
+
+		public static float StringToFloat(string text)
+		{
+			char dec;
+			if (text.Contains("."))
+			{
+				dec = '.';
+			}
+			else
+				dec = ',';
+
+			string[] array = text.Split(dec);
+
+			if (array.Length < 2)
+			{
+				return int.Parse(text);
+			}
+			else return int.Parse(array[0]) + float.Parse(array[1]) / (float)Math.Pow(10, array[1].Length);
+
+		}
+
+		public bool IsKeyPressed(Keys key)
+		{
+			if (keyboard.IsKeyDown(key) && keyboardPrev.IsKeyUp(key))
+				return true;
+			else
+				return false;
 		}
 
 		/// <summary>

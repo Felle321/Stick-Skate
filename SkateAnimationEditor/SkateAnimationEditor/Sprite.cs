@@ -409,6 +409,65 @@ namespace SkateAnimationEditor
 		/// <param name="rand">An instance of the class Random</param>
 		/// <param name="spriteBatch">The currently used SpriteBatch</param>
 		/// <param name="camera">The active camera</param>
+		/// <param name="rectangle">The rectangle the Sprite will be drawn to</param>
+		/// <param name="angle">The angle with which the texture is to be drawn</param>
+		/// <param name="origin">The origin of the rotation</param>
+		/// <param name="color">The color of the sprite</param>
+		public void Draw(SpriteBatch spriteBatch, Camera camera, Rectangle rectangle, float angle, Vector2 origin, Color color, float opacity, SpriteEffects spriteEffect, float depth)
+		{
+			if (currentTexture == textures.Count - 1 && ((int)Math.Floor(currentFrame) == frames[(int)Math.Floor(currentTexture)] || !spriteSheet[(int)Math.Floor(currentTexture)]))
+				animationEnd = true;
+			else
+				animationEnd = false;
+
+			if (draw && (camera.rectangle.Intersects(rectangle) || HUD))
+			{
+				if (!animated)
+				{
+					spriteBatch.Draw(textures[0], rectangle, null, GetColorOpaque(color, opacity), angle, origin, spriteEffect, depth);
+				}
+				else
+				{
+					if (spriteSheet[(int)Math.Floor(currentTexture)])
+					{
+						int x = (int)(currentFrame % Math.Floor((float)(textures[(int)Math.Floor(currentTexture)].Width / width))) * width;
+						int y = (int)Math.Floor(currentFrame / (textures[(int)Math.Floor(currentTexture)].Width / width)) * height;
+						bool temp = animationEnd;
+						spriteBatch.Draw(textures[(int)Math.Floor(currentTexture)], rectangle, new Rectangle(x, y, width, height), GetColorOpaque(color, opacity), angle, origin, spriteEffect, depth);
+					}
+					else
+					{
+						spriteBatch.Draw(textures[(int)Math.Floor(currentTexture)], rectangle, null, GetColorOpaque(color, opacity), angle, origin, spriteEffect, depth);
+					}
+				}
+			}
+
+			if (animated)
+			{
+				if (spriteSheet[(int)Math.Floor(currentTexture)])
+				{
+					if (currentFrame >= frames[(int)Math.Floor(currentTexture)])
+					{
+						currentFrame = 0;
+						currentTexture = (currentTexture + 1) % (textures.Count);
+					}
+					else
+						currentFrame = (currentFrame + speed);
+				}
+				else
+					currentTexture = (currentTexture + speed) % (textures.Count);
+			}
+
+			if (drawOnce && animationEnd)
+				draw = false;
+		}
+
+		/// <summary>
+		/// Draws the sprite
+		/// </summary>
+		/// <param name="rand">An instance of the class Random</param>
+		/// <param name="spriteBatch">The currently used SpriteBatch</param>
+		/// <param name="camera">The active camera</param>
 		/// <param name="position">The position of the Sprite</param>
 		/// <param name="scale">The scale the texture will be drawn with (this doesn't exclude the base-scale)</param>
 		/// <param name="angle">The angle with which the texture is to be drawn</param>
