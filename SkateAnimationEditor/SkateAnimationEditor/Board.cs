@@ -17,7 +17,6 @@ namespace SkateAnimationEditor
 {
 	public class Board
 	{
-		Matrix matrix = new Matrix();
 		List<BoardKeyFrame> keyFrames = new List<BoardKeyFrame>();
 		public float scaleX, scaleY, rotation = 0;
 		public Vector2 position = Vector2.Zero;
@@ -63,6 +62,16 @@ namespace SkateAnimationEditor
 					keyFrames.Add(new BoardKeyFrame(5, 0, 0, .07f, new Vector2(26, 45), false, true));
 					keyFrames.Add(new BoardKeyFrame(8, 0, 0, 0, new Vector2(24, 44), false, true));
 					break;
+				case ("KickFlip"):
+					InitializeAnimation(20, .5009954f);
+					keyFrames.Add(new BoardKeyFrame(0, 0, 0, 0, new Vector2(-5, 8), false, true));
+					keyFrames.Add(new BoardKeyFrame(2, 0, 0, -.17f, new Vector2(-3, 3), false, true));
+					keyFrames.Add(new BoardKeyFrame(3, 1, .2300007f, .03944445f, new Vector2(-.1111112f, .2777777f), false, false));
+					keyFrames.Add(new BoardKeyFrame(6, 1, 1, .03248366f, new Vector2(.02614379f, -6.359477f), false, false));
+					keyFrames.Add(new BoardKeyFrame(12, 1, -1, .01856209f, new Vector2(.8720822f, -6.205416f), false, false));
+					keyFrames.Add(new BoardKeyFrame(15, 1, -.3550003f, .0916013f, new Vector2(-1.329948f, -5.878385f), false, false));
+					keyFrames.Add(new BoardKeyFrame(16, 1, -.2840002f, .123281f, new Vector2(-1.063959f, 3.897292f), false, true));
+					break;
 				default:
 					InitializeAnimation(0, 0);
 					break;
@@ -77,8 +86,8 @@ namespace SkateAnimationEditor
 
 		public void InitializeAnimation(int totalFrames, float speed)
 		{
-			this.totalFrames = totalFrames;
 			this.speed = speed;
+			this.totalFrames = totalFrames;
 			scaleX = 0;
 			scaleY = 0;
 			rotation = 0;
@@ -89,7 +98,7 @@ namespace SkateAnimationEditor
 
 		public string GetCommand()
 		{
-			string text = "InitializeAnimation(" + totalFrames + ", " + speed + ");";
+			string text = "InitializeAnimation(" + totalFrames + ", " + Game1.FloatToString(speed) + ");";
 
 			for (int i = 0; i < keyFrames.Count; i++)
 			{
@@ -111,7 +120,7 @@ namespace SkateAnimationEditor
 					return;
 				}
 				else if (keyFrames[i].frame < currentFrame)
-					insert = i - 1;
+					insert = i + 1;
 			}
 
 			if (insert < 0)
@@ -139,7 +148,7 @@ namespace SkateAnimationEditor
 
 				if (keyFrames.Count > 1)
 				{
-					for (int i = keyFrames.Count - 1; i > 0; i--)
+					for (int i = keyFrames.Count - 1; i >= 0; i--)
 					{
 						if (keyFrames[i].frame < currentFrame)
 						{
@@ -200,7 +209,7 @@ namespace SkateAnimationEditor
 		{
 			frame += speed;
 
-			if (frame > totalFrames)
+			if (frame >= totalFrames )
 				frame -= totalFrames;
 
 			currentFrame = (int)Math.Floor(frame);

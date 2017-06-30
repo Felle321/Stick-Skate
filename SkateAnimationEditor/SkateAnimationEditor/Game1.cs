@@ -76,6 +76,26 @@ namespace SkateAnimationEditor
 			player.SetAnimation("KickFlip");
 		}
 
+		public static string FloatToString(float f)
+		{
+			string text = f.ToString();
+
+			if(text.Contains(","))
+			{
+				int insert = text.IndexOf(',');
+
+				text = text.Remove(insert, 1);
+				text = text.Insert(insert, ".");
+
+				if (insert == 1 && text.IndexOf('0') == 0)
+					text = text.Remove(0, 1);
+			}
+
+			text += "f";
+
+			return text;
+		}
+
 		/// <summary>
 		/// UnloadContent will be called once per game and is the place to unload
 		/// game-specific content.
@@ -109,6 +129,11 @@ namespace SkateAnimationEditor
 					SaveAnimation();
 				}
 
+				if (mouse.LeftButton == ButtonState.Pressed)
+				{
+					player.textureOffset += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
+				}
+
 				if (IsKeyPressed(Keys.Down))
 				{
 					if (player.animation.currentFrame - 1 < 0)
@@ -125,9 +150,9 @@ namespace SkateAnimationEditor
 				}
 
 				if (keyboard.IsKeyDown(Keys.Left) && player.animation.speed >= 0)
-					player.animation.speed -= 0.0005f;
+					player.animation.speed -= 0.002f;
 				else if (keyboard.IsKeyDown(Keys.Right))
-					player.animation.speed += 0.0005f;
+					player.animation.speed += 0.002f;
 
 				if (player.animation.speed < 0)
 					player.animation.speed = 0;
@@ -142,6 +167,11 @@ namespace SkateAnimationEditor
 				if (IsKeyPressed(Keys.R))
 				{
 					player.board.RemoveCurrentKeyFrame();
+				}
+
+				if (mouse.LeftButton == ButtonState.Pressed)
+				{
+					player.board.position += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
 				}
 
 				if (IsKeyPressed(Keys.Down))
@@ -163,9 +193,9 @@ namespace SkateAnimationEditor
 				}
 
 				if (keyboard.IsKeyDown(Keys.Left) && player.animation.speed >= 0)
-					player.board.speed -= 0.0005f;
+					player.board.speed -= 0.002f;
 				else if (keyboard.IsKeyDown(Keys.Right))
-					player.board.speed += 0.0005f;
+					player.board.speed += 0.002f;
 
 
 				if (player.board.speed < 0)
@@ -177,80 +207,73 @@ namespace SkateAnimationEditor
 					editMode++;
 				else if (keyboard.IsKeyDown(Keys.Down) && keyboardPrev.IsKeyUp(Keys.Down))
 					editMode--;
+
+				switch (editMode)
+				{
+					case (0):
+						
+						break;
+					case (1):
+						
+						break;
+					case (2):
+						if (mouse.LeftButton == ButtonState.Pressed)
+						{
+							player.textureOrigin += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
+						}
+						break;
+					case (3):
+						if (mouse.LeftButton == ButtonState.Pressed)
+						{
+							player.board.simpleBoardOrigin += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
+						}
+						break;
+					case (4):
+						if (keyboard.IsKeyDown(Keys.Left))
+							player.board.scaleX -= 0.01f;
+						else if (keyboard.IsKeyDown(Keys.Right))
+							player.board.scaleX += 0.01f;
+
+						if (player.board.scaleX < -1)
+							player.board.scaleX = -1;
+						else if (player.board.scaleX > 1)
+							player.board.scaleX = 1;
+
+						break;
+					case (5):
+						if (keyboard.IsKeyDown(Keys.Left))
+							player.board.scaleY -= 0.01f;
+						else if (keyboard.IsKeyDown(Keys.Right))
+							player.board.scaleY += 0.01f;
+
+						if (player.board.scaleY < -1)
+							player.board.scaleY = -1;
+						else if (player.board.scaleY > 1)
+							player.board.scaleY = 1;
+
+						break;
+					case (6):
+						if (keyboard.IsKeyDown(Keys.Left))
+							player.board.rotation -= 0.01f;
+						else if (keyboard.IsKeyDown(Keys.Right))
+							player.board.rotation += 0.01f;
+						break;
+					case (7):
+						if (IsKeyPressed(Keys.Left))
+							player.board.totalFrames--;
+						else if (IsKeyPressed(Keys.Right))
+							player.board.totalFrames++;
+						break;
+					case (8):
+						if (IsKeyPressed(Keys.Left))
+							player.board.drawSimpleBoard = false;
+						else if (IsKeyPressed(Keys.Right))
+							player.board.drawSimpleBoard = true;
+						break;
+					default:
+						break;
+				}
 			}
-
-			switch (editMode)
-			{
-				case (0):
-					if (mouse.LeftButton == ButtonState.Pressed)
-					{
-						player.textureOffset += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
-					}
-					break;
-				case (1):
-					if (mouse.LeftButton == ButtonState.Pressed)
-					{
-						player.board.position += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
-					}
-					break;
-				case (2):
-					if (mouse.LeftButton == ButtonState.Pressed)
-					{
-						player.textureOrigin += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
-					}
-					break;
-				case (3):
-					if (mouse.LeftButton == ButtonState.Pressed)
-					{
-						player.board.simpleBoardOrigin += mouse.Position.ToVector2() - mousePrev.Position.ToVector2();
-					}
-					break;
-				case (4):
-					if (keyboard.IsKeyDown(Keys.Left))
-						player.board.scaleX -= 0.01f;
-					else if (keyboard.IsKeyDown(Keys.Right))
-						player.board.scaleX += 0.01f;
-
-					if (player.board.scaleX < -1)
-						player.board.scaleX = -1;
-					else if (player.board.scaleX > 1)
-						player.board.scaleX = 1;
-
-					break;
-				case (5):
-					if (keyboard.IsKeyDown(Keys.Left))
-						player.board.scaleY -= 0.01f;
-					else if (keyboard.IsKeyDown(Keys.Right))
-						player.board.scaleY += 0.01f;
-
-					if (player.board.scaleY < -1)
-						player.board.scaleY = -1;
-					else if (player.board.scaleY > 1)
-						player.board.scaleY = 1;
-
-					break;
-				case (6):
-					if (keyboard.IsKeyDown(Keys.Left))
-						player.board.rotation -= 0.01f;
-					else if (keyboard.IsKeyDown(Keys.Right))
-						player.board.rotation += 0.01f;
-					break;
-				case (7):
-					if (IsKeyPressed(Keys.Left))
-						player.board.totalFrames--;
-					else if (IsKeyPressed(Keys.Right))
-						player.board.totalFrames++;
-					break;
-				case (8):
-					if (IsKeyPressed(Keys.Left))
-						player.board.drawSimpleBoard = false;
-					else if (IsKeyPressed(Keys.Right))
-						player.board.drawSimpleBoard = true;
-					break;
-				default:
-					break;
-			}
-
 			#endregion
 
 
@@ -259,8 +282,6 @@ namespace SkateAnimationEditor
 			player.Update();
 
 			camera.pos = player.Rectangle.Center.ToVector2();
-
-
 
 
 			mousePrev = mouse;

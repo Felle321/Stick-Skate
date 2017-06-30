@@ -23,10 +23,8 @@ namespace SkateAnimationEditor
 
 		public string animationKey = "";
 		public Vector2 textureOffset = Vector2.Zero;
-		public Vector2 wheelOffset = Vector2.Zero;
 		public Vector2 textureOrigin = Vector2.Zero;
-		public Vector2 wheelOrigin = Vector2.Zero;
-		public Animation animation, animationWheels;
+		public Animation animation;
 		public float animationSpeedPrev = 0;
 		
 		public bool animationFreeze = false;
@@ -79,11 +77,8 @@ namespace SkateAnimationEditor
 		{
 			animation.Draw(spriteBatch, camera, ContactPos + textureOffset, 1, angle, textureOrigin, color, 1, SpriteEffects.None, 0f);
 			
-			//if(!board.drawSimpleBoard)
-				//animationWheels.Draw(spriteBatch, camera, position + textureOffset, 1, angle, wheelOrigin, wheelColor, 1, SpriteEffects.None, 0f);
-			
+
 			spriteBatch.Draw(Game1.pixel, ContactPos + textureOffset + textureOrigin, null, Color.Red, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
-			//spriteBatch.Draw(Game1.pixel, position + wheelOffset + wheelOrigin, null, Color.Green, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
 
 
 			board.Draw(ContactPos, spriteBatch, camera, position, wheelColor);
@@ -108,10 +103,7 @@ namespace SkateAnimationEditor
 			PlayerAnimations.ReturnValue value = playerAnimations.GetAnimation(key);
 			textureOffset = value.textureOffset;
 			textureOrigin = value.textureOrigin;
-			wheelOffset = value.wheelsOffset;
-			wheelOrigin = value.wheelsOrigin;
 			animation = value.animation;
-			animationWheels = value.animationWheels;
 
 			board.SetAnimation(key);
 			
@@ -131,8 +123,6 @@ namespace SkateAnimationEditor
 			string text = "";
 			text += "TextureOffset: " + textureOffset.ToString() + "\r\n";
 			text += "TextureOrigin: " + textureOrigin.ToString() + "\r\n";
-			text += "WheelOffset: " + wheelOffset.ToString() + "\r\n";
-			text += "WheelOrigin: " + wheelOrigin.ToString() + "\r\n";
 			return text;
 		}
 	}

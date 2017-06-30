@@ -33,7 +33,7 @@ namespace SkateAnimationEditor
 
 		public string GetCommand()
 		{
-			return "keyFrames.Add(new BoardKeyFrame(" + frame.ToString() + ", " + scaleX.ToString() + ", " + scaleY.ToString() + ", " + rotation.ToString() + ", " + position.ToString() + ", " + animationFreeze.ToString() + ", " + drawSimpleBoard.ToString() + "));";
+			return "keyFrames.Add(new BoardKeyFrame(" + frame + ", " + Game1.FloatToString(scaleX) + ", " + Game1.FloatToString(scaleY) + ", " + Game1.FloatToString(rotation) + ", new Vector2(" + Game1.FloatToString(position.X) + ", " + Game1.FloatToString(position.Y) + "), " + animationFreeze.ToString().ToLower() + ", " + drawSimpleBoard.ToString().ToLower() + "));";
 		}
 	}
 }

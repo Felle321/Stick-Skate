@@ -17,8 +17,8 @@ namespace SkateAnimationEditor
 	{
 		public struct ReturnValue
 		{
-			public Animation animation, animationWheels;
-			public Vector2 textureOffset, wheelsOffset, textureOrigin, wheelsOrigin;
+			public Animation animation;
+			public Vector2 textureOffset, textureOrigin;
 		}
 
 		public ReturnValue GetAnimation(string key)
@@ -28,38 +28,30 @@ namespace SkateAnimationEditor
 			switch (key)
 			{
 				case ("Idle"):
-					returnValue.animation = new Animation("Player_Idle", 0);
-					returnValue.animationWheels = null;
+					returnValue.animation = new Animation("Player_Idle");
 					returnValue.textureOffset = new Vector2(20, 43);
 					returnValue.textureOrigin = new Vector2(32, 128);
-					returnValue.wheelsOffset = Vector2.Zero;
-					returnValue.wheelsOrigin = Vector2.Zero;
 					break;
 				case ("JumpCharge"):
-					returnValue.animation = new Animation("Player_JumpCharge", 0);
-					returnValue.animationWheels = null;
+					returnValue.animation = new Animation("Player_JumpCharge");
 					returnValue.textureOffset = new Vector2(21, 42);
 					returnValue.textureOrigin = new Vector2(32, 128);
-					returnValue.wheelsOffset = Vector2.Zero;
-					returnValue.wheelsOrigin = Vector2.Zero;
 					break;
 				case ("Jump"):
-					returnValue.animation = new Animation("Player_Jump", 0);
-					returnValue.animationWheels = null;
+					returnValue.animation = new Animation("Player_Jump");
 					returnValue.textureOffset = new Vector2(21, 42);
 					returnValue.textureOrigin = new Vector2(32, 128);
-					returnValue.wheelsOffset = Vector2.Zero;
-					returnValue.wheelsOrigin = Vector2.Zero;
 					break;
 				case ("KickFlip"):
-					returnValue.animation = new Animation("Player_Jump", 0);
-					returnValue.animationWheels = null;
-					returnValue.textureOffset = new Vector2(21, 42);
+					returnValue.animation = new Animation("Player_Jump");
+					returnValue.animation.speed = .5f;
+					returnValue.textureOffset = new Vector2(-1, 0);
 					returnValue.textureOrigin = new Vector2(32, 128);
-					returnValue.wheelsOffset = Vector2.Zero;
-					returnValue.wheelsOrigin = Vector2.Zero;
 					break;
 				default:
+					returnValue.animation = new Animation("Player_Idle");
+					returnValue.textureOffset = new Vector2(20, 43);
+					returnValue.textureOrigin = new Vector2(32, 128);
 					break;
 			}
 			
@@ -74,7 +66,7 @@ namespace SkateAnimationEditor
 		{
 			SpriteHandler.AddSprite("Player_Idle", new Sprite(Content.Load<Texture2D>("idle"), 4, 64, 128));
 			SpriteHandler.SetInfo("Player_Idle", 0.1f, 1);
-			SpriteHandler.AddSprite("Player_Jump", new Sprite(Content.Load<Texture2D>("jump"), 10, 64, 128));
+			SpriteHandler.AddSprite("Player_Jump", new Sprite(Content.Load<Texture2D>("jump"), 15, 64, 128));
 			SpriteHandler.SetInfo("Player_Jump", 0.1f, 1);
 			SpriteHandler.AddSprite("Player_JumpCharge", new Sprite(Content.Load<Texture2D>("jumpCharge"), 4, 64, 128));
 			SpriteHandler.SetInfo("Player_JumpCharge", 0.1f, 1);
