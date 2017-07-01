@@ -25,6 +25,18 @@ namespace Skate
 		}
 
 		/// <summary>
+		/// Sets some basic info about the sprite
+		/// </summary>
+		/// <param name="key"></param>
+		/// <param name="speed"></param>
+		/// <param name="scale"></param>
+		public static void SetInfo(string key, float speed, float scale)
+		{
+			sprites[key].speed = speed;
+			sprites[key].scale = scale;
+		}
+
+		/// <summary>
 		/// Draws the sprite with the given key
 		/// </summary>
 		/// <param name="key">The key which decides what sprite to be used</param>
@@ -32,9 +44,22 @@ namespace Skate
 		/// <param name="spriteBatch"></param>
 		/// <param name="camera"></param>
 		/// <param name="position">The position of the sprite</param>
-		public static void Draw(string key, Random rand, SpriteBatch spriteBatch, Camera camera, Vector2 position, SpriteEffects spriteEffect, float depth)
+		public static void Draw(string key, SpriteBatch spriteBatch, Camera camera, Vector2 position, SpriteEffects spriteEffect, float depth)
 		{
-			sprites[key].Draw(rand, spriteBatch, camera, position, spriteEffect, depth);
+			sprites[key].Draw(spriteBatch, camera, position, spriteEffect, depth);
+		}
+
+		/// <summary>
+		/// Draws the sprite with the given key
+		/// </summary>
+		/// <param name="key">The key which decides what sprite to be used</param>
+		/// <param name="rand"></param>
+		/// <param name="spriteBatch"></param>
+		/// <param name="camera"></param>
+		/// <param name="position">The position of the sprite</param>
+		public static void Draw(string key, SpriteBatch spriteBatch, Camera camera, Rectangle rectangle, SpriteEffects spriteEffect, float depth)
+		{
+			sprites[key].Draw(spriteBatch, camera, rectangle, spriteEffect, depth);
 		}
 
 		/// <summary>
@@ -46,9 +71,14 @@ namespace Skate
 		/// <param name="camera"></param>
 		/// <param name="position">The position of the sprite</param>
 		/// <param name="vector2Scale">The Vector2 scale of the sprite</param>
-		public static void Draw(string key, Random rand, SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, SpriteEffects spriteEffect, float depth)
+		public static void Draw(string key, SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, SpriteEffects spriteEffect, float depth)
 		{
-			sprites[key].Draw(rand, spriteBatch, camera, position, vector2Scale, spriteEffect, depth);
+			sprites[key].Draw(spriteBatch, camera, position, vector2Scale, spriteEffect, depth);
+		}
+
+		internal static void SetSpeed()
+		{
+			throw new NotImplementedException();
 		}
 
 		/// <summary>
@@ -63,9 +93,9 @@ namespace Skate
 		/// <param name="angle"></param>
 		/// <param name="color"></param>
 		/// <param name="origin"></param>
-		public static void Draw(string key, Random rand, SpriteBatch spriteBatch, Camera camera, Vector2 position, float scale, float angle, Vector2 origin, Color color, float opacity, SpriteEffects spriteEffect, float depth)
+		public static void Draw(string key, SpriteBatch spriteBatch, Camera camera, Vector2 position, float scale, float angle, Vector2 origin, Color color, float opacity, SpriteEffects spriteEffect, float depth)
 		{
-			sprites[key].Draw(rand, spriteBatch, camera, position, scale, angle, origin, color, opacity, spriteEffect, depth);
+			sprites[key].Draw(spriteBatch, camera, position, scale, angle, origin, color, opacity, spriteEffect, depth);
 		}
 
 		/// <summary>
@@ -80,20 +110,18 @@ namespace Skate
 		/// <param name="angle"></param>
 		/// <param name="color"></param>
 		/// <param name="origin"></param>
-		public static void Draw(string key, Random rand, SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, float angle, Vector2 origin, Color color, float opacity, SpriteEffects spriteEffect, float depth)
+		public static void Draw(string key, SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, float angle, Vector2 origin, Color color, float opacity, SpriteEffects spriteEffect, float depth)
 		{
-			sprites[key].Draw(rand, spriteBatch, camera, position, vector2Scale, angle, origin, color, opacity, spriteEffect, depth);
+			sprites[key].Draw(spriteBatch, camera, position, vector2Scale, angle, origin, color, opacity, spriteEffect, depth);
 		}
 
 
 		public static Sprite InstantiateSprite(string key)
 		{
 			Sprite oldSpr = sprites[key];
-			Sprite spr = new Sprite(oldSpr.textures, oldSpr.frames);
+			Sprite spr = new Sprite(oldSpr.textures, oldSpr.frames, oldSpr.width, oldSpr.height);
 			spr.angle = oldSpr.angle;
 			spr.color = oldSpr.color;
-			spr.width = oldSpr.width;
-			spr.height = oldSpr.height;
 			spr.scale = oldSpr.scale;
 			spr.speed = oldSpr.speed;
 			spr.origin = oldSpr.origin;

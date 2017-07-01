@@ -28,12 +28,26 @@ namespace Skate
 		public bool onGround, onGroundPrev, onSlope, grind, fallThrough = false;
 		public Slope slope;
 		public int solidRef, platform, platformPrev;
-		public float angle = 0f;
 		public float bounceFactor = 0f;
 		int minSpeed = 8;
-		public Color color = Color.Black;
+
+		//AnimationHandling
+		public PlayerAnimation playerAnimations = new PlayerAnimation();
+		public Board board;
+
+		public string animationKey = "";
 		public Vector2 textureOffset = Vector2.Zero;
-		public Vector2 boardOffset = Vector2.Zero;
+		public Vector2 textureOrigin = Vector2.Zero;
+		public Animation animation;
+		public float animationSpeedPrev = 0;
+
+		public bool animationFreeze = false;
+
+		public float angle = 0;
+
+		Color color = Color.Black;
+
+		public int jumpCharge;
 
 		public enum State
 		{
@@ -45,11 +59,20 @@ namespace Skate
 
 		public State state = State.Air;
 
+		public Vector2 ContactPos
+		{
+			get
+			{
+				return new Vector2(Rectangle.X + (float)Rectangle.Width / 2, Rectangle.Y + (float)Rectangle.Height);
+			}
+		}
+
 		public Texture2D texture;
 
-		public Player( Texture2D texture)
+		public Player(string deck, string tape, string simpleBoard)
 		{
-			this.texture = texture;
+			board = new Board(deck, tape);
+			board.simpleBoard = simpleBoard;
 		}
 
 		public void Update()
@@ -65,11 +88,15 @@ namespace Skate
 				{
 					angle = -slope.angle;
 					speed -= slope.k;
+					onGround = true;
 				}
 				else
 					angle = 0;
 
 				speed *= 0.999f;
+
+				if(animationKey != "Idle" && jumpCharge <= 0 && state != State.Trick)
+					SetAnimation("Idle");
 			}
 			else
 			{
@@ -82,11 +109,51 @@ namespace Skate
 				else
 					angle -= 0.001f;
 			}
+
+			//Animations
+			board.Update(animation.currentFrame);
+
+			if (board.animationFreeze && !animationFreeze)
+			{
+				animationSpeedPrev = animation.speed;
+				animation.speed = 0;
+			}
+			else if (!board.animationFreeze && animationFreeze)
+			{
+				animation.speed = animationSpeedPrev;
+			}
 		}
 
-		public void Draw(SpriteBatch spriteBatch)
+		public void Draw(SpriteBatch spriteBatch, Camera camera)
 		{
-			spriteBatch.Draw(texture, new Vector2(Centre.X, Rectangle.Bottom), null, color, angle, new Vector2(texture.Width / 2, texture.Height), 1f, SpriteEffects.None, 0f);
+			animation.Draw(spriteBatch, camera, ContactPos + textureOffset, 1, angle, textureOrigin, color, 1, SpriteEffects.None, 0f);
+
+
+			spriteBatch.Draw(Game1.pixel, ContactPos + textureOffset + textureOrigin, null, Color.Red, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
+
+
+			board.Draw(ContactPos, spriteBatch, camera, position);
+		}
+
+		public void SetAnimation(string key)
+		{
+			animationKey = key;
+			PlayerAnimation value = PlayerAnimation.GetAnimation(key);
+			textureOffset = value.textureOffset;
+			textureOrigin = value.textureOrigin;
+			animation = value.animation;
+
+			board.SetAnimation(key);
+
+			if (board.animationFreeze && !animationFreeze)
+			{
+				animationSpeedPrev = animation.speed;
+				animation.speed = 0;
+			}
+			else if (!board.animationFreeze && animationFreeze)
+			{
+				animation.speed = animationSpeedPrev;
+			}
 		}
 
 		internal void SetGround(bool ground)

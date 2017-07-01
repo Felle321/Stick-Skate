@@ -66,7 +66,6 @@ namespace SkateAnimationEditor
 			// Create a new SpriteBatch, which can be used to draw textures.
 			spriteBatch = new SpriteBatch(GraphicsDevice);
 
-			SpriteHandler.AddSprite("SimpleBoard", new Sprite(Content.Load<Texture2D>("board")));
 			fontDebug = Content.Load<SpriteFont>("Font_Debug");
 			pixel = Content.Load<Texture2D>("pixel");
 

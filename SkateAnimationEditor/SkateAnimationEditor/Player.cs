@@ -18,7 +18,7 @@ namespace SkateAnimationEditor
 		}
 
 		//AnimationHandling
-		public PlayerAnimations playerAnimations = new PlayerAnimations();
+		public PlayerAnimation playerAnimations = new PlayerAnimation();
 		public Board board;
 
 		public string animationKey = "";
@@ -32,7 +32,6 @@ namespace SkateAnimationEditor
 		public float angle = 0;
 
 		Color color = Color.Black;
-		Color wheelColor = Color.White;
 
 		public Vector2 ContactPos
 		{
@@ -81,7 +80,7 @@ namespace SkateAnimationEditor
 			spriteBatch.Draw(Game1.pixel, ContactPos + textureOffset + textureOrigin, null, Color.Red, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
 
 
-			board.Draw(ContactPos, spriteBatch, camera, position, wheelColor);
+			board.Draw(ContactPos, spriteBatch, camera, position);
 		}
 		
 
@@ -100,7 +99,7 @@ namespace SkateAnimationEditor
 		public void SetAnimation(string key)
 		{
 			animationKey = key;
-			PlayerAnimations.ReturnValue value = playerAnimations.GetAnimation(key);
+			PlayerAnimation value = PlayerAnimation.GetAnimation(key);
 			textureOffset = value.textureOffset;
 			textureOrigin = value.textureOrigin;
 			animation = value.animation;

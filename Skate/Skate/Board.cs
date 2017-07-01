@@ -13,7 +13,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
 
-namespace SkateAnimationEditor
+namespace Skate
 {
 	public class Board
 	{
@@ -44,7 +44,7 @@ namespace SkateAnimationEditor
 
 			width = SpriteHandler.sprites[deck].width;
 			height = SpriteHandler.sprites[deck].height;
-			
+
 			switch (key)
 			{
 				case ("Idle"):
@@ -54,7 +54,7 @@ namespace SkateAnimationEditor
 					InitializeAnimation(0, 0);
 					break;
 				case ("Jump"):
-					InitializeAnimation(11, .1f);
+					InitializeAnimation(11, .8f);
 					keyFrames.Add(new BoardKeyFrame(0, 0, 0, -.135f, new Vector2(17, 48), false, true));
 					keyFrames.Add(new BoardKeyFrame(1, 0, 0, -.095f, new Vector2(16, 47), false, true));
 					keyFrames.Add(new BoardKeyFrame(2, 0, 0, -.2f, new Vector2(16, 46), false, true));
@@ -63,7 +63,7 @@ namespace SkateAnimationEditor
 					keyFrames.Add(new BoardKeyFrame(8, 0, 0, 0, new Vector2(24, 44), false, true));
 					break;
 				case ("KickFlip"):
-					InitializeAnimation(20, .5009954f);
+					InitializeAnimation(20, .8f);
 					keyFrames.Add(new BoardKeyFrame(0, 0, 0, 0, new Vector2(-5, 8), false, true));
 					keyFrames.Add(new BoardKeyFrame(2, 0, 0, -.17f, new Vector2(-3, 3), false, true));
 					keyFrames.Add(new BoardKeyFrame(3, 1, .2300007f, .03944445f, new Vector2(-.1111112f, .2777777f), false, false));
@@ -77,7 +77,7 @@ namespace SkateAnimationEditor
 					break;
 			}
 
-			if(keyFrames.Count > 0)
+			if (keyFrames.Count > 0)
 				if (totalFrames < keyFrames[keyFrames.Count - 1].frame)
 					totalFrames = keyFrames[keyFrames.Count - 1].frame;
 
@@ -138,7 +138,7 @@ namespace SkateAnimationEditor
 
 			for (int i = 0; i < keyFrames.Count; i++)
 			{
-				if(keyFrames[i].frame == currentFrame)
+				if (keyFrames[i].frame == currentFrame)
 					keyFrameActive = true;
 			}
 
@@ -209,7 +209,7 @@ namespace SkateAnimationEditor
 		{
 			frame += speed;
 
-			if (frame >= totalFrames )
+			if (frame >= totalFrames)
 				frame -= totalFrames;
 
 			currentFrame = (int)Math.Floor(frame);
@@ -227,7 +227,6 @@ namespace SkateAnimationEditor
 				else
 					key = tape;
 
-				//SpriteHandler.sprites[key].Draw(spriteBatch, camera, new Rectangle((int)(position.X + contactPos.X - (width * .5f * Math.Abs(scaleX))), (int)(position.Y + contactPos.Y - height * .5f * Math.Abs(scaleY)), (int)(width * Math.Abs(scaleX)), (int)(height * Math.Abs(scaleY))), rotation, new Vector2(0, 0), Color.White, 1f, SpriteEffects.None, 0f);
 				SpriteHandler.sprites[key].Draw(spriteBatch, camera, new Rectangle((int)(position.X + contactPos.X), (int)(position.Y + contactPos.Y), (int)(width * Math.Abs(scaleX)), (int)(height * Math.Abs(scaleY))), rotation, new Vector2(width * Math.Abs(scaleX) * .5f, height * Math.Abs(scaleY) * .5f), Color.White, 1f, SpriteEffects.None, 0f);
 			}
 		}
@@ -241,7 +240,7 @@ namespace SkateAnimationEditor
 		/// Loads all the decks and tapes, etc
 		/// </summary>
 		/// <param name="Content"></param>
-		public void LoadContent(ContentManager Content)
+		public static void LoadContent(ContentManager Content)
 		{
 			SpriteHandler.AddSprite("Tape_Default", new Sprite(Content.Load<Texture2D>("Tape_Default")));
 			SpriteHandler.AddSprite("Deck_Default", new Sprite(Content.Load<Texture2D>("Deck_Default")));

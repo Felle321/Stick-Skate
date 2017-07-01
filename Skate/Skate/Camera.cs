@@ -15,7 +15,7 @@ namespace Skate
 		public Rectangle rectangle = new Rectangle(0, 0, 0, 0);
 		float rotation = 0;
 
-		protected Vector2 target;
+		public Vector2 target;
 
 		private Vector2 shakeOffset = Vector2.Zero;
 		public List<Vector2> shakes = new List<Vector2>();
@@ -48,6 +48,19 @@ namespace Skate
 
 		public void Update(Random rand)
 		{
+			if (Vector2.Distance(pos, target) < 1)
+			{
+				pos = target;
+				movement = Vector2.Zero;
+			}
+			else
+			{
+				movement.X = (target.X - pos.X) * .085f;
+				movement.Y = (target.Y - pos.Y) * .085f;
+
+				pos += movement;
+			}
+
 			shakeOffset = Vector2.Zero;
 
 			for (int i = 0; i < shakes.Count; i++)

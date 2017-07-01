@@ -47,13 +47,13 @@ namespace Skate
 		/// <param name="spriteBatch"></param>
 		/// <param name="camera"></param>
 		/// <param name="position">The position of the sprite</param>
-		public void Draw(Random rand, SpriteBatch spriteBatch, Camera camera, Vector2 position, SpriteEffects spriteEffect, float depth)
+		public void Draw(SpriteBatch spriteBatch, Camera camera, Vector2 position, SpriteEffects spriteEffect, float depth)
 		{
 			if (currentTexture == SpriteHandler.sprites[sprite].textures.Count - 1 && ((int)Math.Floor(currentFrame) == SpriteHandler.sprites[sprite].frames[(int)Math.Floor(currentTexture)] || !SpriteHandler.sprites[sprite].spriteSheet[(int)Math.Floor(currentTexture)]))
 				animationEnd = true;
 			else
 				animationEnd = false;
-			SpriteHandler.sprites[sprite].Draw(rand, spriteBatch, camera, position, this, spriteEffect, depth);
+			SpriteHandler.sprites[sprite].Draw(spriteBatch, camera, position, this, spriteEffect, depth);
 		}
 
 		/// <summary>
@@ -65,13 +65,13 @@ namespace Skate
 		/// <param name="camera"></param>
 		/// <param name="position">The position of the sprite</param>
 		/// <param name="vector2Scale">The Vector2 scale of the sprite</param>
-		public void Draw(Random rand, SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, SpriteEffects spriteEffect, float depth)
+		public void Draw(SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, SpriteEffects spriteEffect, float depth)
 		{
 			if (currentTexture == SpriteHandler.sprites[sprite].textures.Count - 1 && ((int)Math.Floor(currentFrame) == SpriteHandler.sprites[sprite].frames[(int)Math.Floor(currentTexture)] || !SpriteHandler.sprites[sprite].spriteSheet[(int)Math.Floor(currentTexture)]))
 				animationEnd = true;
 			else
 				animationEnd = false;
-			SpriteHandler.sprites[sprite].Draw(rand, spriteBatch, camera, position, vector2Scale, this, spriteEffect, depth);
+			SpriteHandler.sprites[sprite].Draw(spriteBatch, camera, position, vector2Scale, this, spriteEffect, depth);
 		}
 
 		/// <summary>
@@ -86,13 +86,13 @@ namespace Skate
 		/// <param name="angle"></param>
 		/// <param name="color"></param>
 		/// <param name="origin"></param>
-		public void Draw(Random rand, SpriteBatch spriteBatch, Camera camera, Vector2 position, float scale, float angle, Vector2 origin, Color color, float opacity, SpriteEffects spriteEffect, float depth)
+		public void Draw(SpriteBatch spriteBatch, Camera camera, Vector2 position, float scale, float angle, Vector2 origin, Color color, float opacity, SpriteEffects spriteEffect, float depth)
 		{
 			if (currentTexture == SpriteHandler.sprites[sprite].textures.Count - 1 && ((int)Math.Floor(currentFrame) == SpriteHandler.sprites[sprite].frames[(int)Math.Floor(currentTexture)] || !SpriteHandler.sprites[sprite].spriteSheet[(int)Math.Floor(currentTexture)]))
 				animationEnd = true;
 			else
 				animationEnd = false;
-			SpriteHandler.sprites[sprite].Draw(rand, spriteBatch, camera, position, scale, angle, origin, color, opacity, this, spriteEffect, depth);
+			SpriteHandler.sprites[sprite].Draw(spriteBatch, camera, position, scale, angle, origin, color, opacity, this, spriteEffect, depth);
 		}
 
 		/// <summary>
@@ -107,13 +107,13 @@ namespace Skate
 		/// <param name="angle"></param>
 		/// <param name="color"></param>
 		/// <param name="origin"></param>
-		public void Draw(Random rand, SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, float angle, Vector2 origin, Color color, float opacity, SpriteEffects spriteEffect, float depth)
+		public void Draw(SpriteBatch spriteBatch, Camera camera, Vector2 position, Vector2 vector2Scale, float angle, Vector2 origin, Color color, float opacity, SpriteEffects spriteEffect, float depth)
 		{
 			if (currentTexture == SpriteHandler.sprites[sprite].textures.Count - 1 && ((int)Math.Floor(currentFrame) == SpriteHandler.sprites[sprite].frames[(int)Math.Floor(currentTexture)] || !SpriteHandler.sprites[sprite].spriteSheet[(int)Math.Floor(currentTexture)]))
 				animationEnd = true;
 			else
 				animationEnd = false;
-			SpriteHandler.sprites[sprite].Draw(rand, spriteBatch, camera, position, vector2Scale, angle, origin, color, opacity, this, spriteEffect, depth);
+			SpriteHandler.sprites[sprite].Draw(spriteBatch, camera, position, vector2Scale, angle, origin, color, opacity, this, spriteEffect, depth);
 		}
 	}
 }

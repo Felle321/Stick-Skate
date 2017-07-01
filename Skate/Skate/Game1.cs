@@ -38,9 +38,8 @@ namespace Skate
 
 		Combo combo = new Combo();
 		List<Trick> trickQueue = new List<Trick>();
-
-		int jumpCharge = 0;
-		int jumpChargeMax = 40;
+		
+		int jumpChargeMax = 30;
 		int jumpStrength = 25;
 
 		int score = 0;
@@ -58,10 +57,14 @@ namespace Skate
 			screenHeight = 720;
 			graphics.IsFullScreen = true;
 			graphics.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
+
+
 		}
 
 		protected override void Initialize()
 		{
+
+			InitializeNewGame();
 
 			base.Initialize();
 		}
@@ -79,12 +82,16 @@ namespace Skate
 			pixel = Content.Load<Texture2D>("pixel");
 			fontDebug = Content.Load<SpriteFont>("font_debug");
 
-			InitializeNewGame();
+			PlayerAnimation.LoadContent(Content);
+			Board.LoadContent(Content);
+
+			player.SetAnimation("KickFlip");
+
 		}
 
 		private void InitializeNewGame()
 		{
-			player = new Player(Content.Load<Texture2D>("guy"));
+			player = new Player("Deck_Default", "Tape_Default", "SimpleBoard");
 			platforms.Add(new Platform(0, new Rectangle(0, 400, 800, 40), Platform.Type.Rectangle));
 			score = 0;
 		}
@@ -152,7 +159,7 @@ namespace Skate
 					}
 				}
 
-				jumpCharge = 0;
+				player.jumpCharge = 0;
 			}
 
 			switch (GetTouchAction())
@@ -160,18 +167,23 @@ namespace Skate
 				case TouchAction.None:
 					if(player.state == Player.State.Ground || player.state == Player.State.Grind)
 					{
-						if (jumpCharge > 0.2f * jumpChargeMax)
+						if (player.jumpCharge > 0.2f * jumpChargeMax)
 						{
-							player.movement.Y = -jumpStrength * (jumpCharge / (float)jumpChargeMax);
+							player.movement.Y = -jumpStrength * (player.jumpCharge / (float)jumpChargeMax);
 							player.onSlope = false;
-							jumpCharge = 0;
+							player.onGround = false;
+							player.jumpCharge = 0;
+							player.SetAnimation("Jump");
+							player.state = Player.State.Air;
 						}
+						else
+							player.jumpCharge = 0;
 					}
 					break;
 				case TouchAction.SwipeLeft:
 					debugLastSwipe = TouchAction.SwipeLeft;
 
-					jumpCharge = 0;
+					player.jumpCharge = 0;
 
 					if (player.onGround)
 						player.speed += 3;
@@ -202,10 +214,19 @@ namespace Skate
 					}
 					break;
 				case TouchAction.Touch:
+					player.SetAnimation("JumpCharge");
 					break;
 				case TouchAction.Hold:
-					if (jumpCharge < jumpChargeMax && player.onGround)
-						jumpCharge++;
+					if (player.jumpCharge < jumpChargeMax && player.onGround)
+					{
+						player.jumpCharge++;
+
+						player.animation.currentFrame = (player.jumpCharge / (float)jumpChargeMax) * player.animation.framesTotal;
+					}
+					else if (player.jumpCharge == jumpChargeMax && player.onGround)
+					{
+						player.animation.currentFrame = player.animation.framesTotal;
+					}
 					break;
 				default:
 					break;
@@ -221,7 +242,7 @@ namespace Skate
 
 			MoveObject(ref player.position, player.Rectangle, ref player.movement, ref player.onGround, player.onGroundPrev, ref player.slope, ref player.onSlope, player.bounceFactor, ref player.platform, ref player.platformPrev, player.fallThrough);
 			
-			camera.pos = player.Centre + new Vector2(200, -100);
+			camera.target = player.Centre + new Vector2(200, -100);
 			camera.Update(rand);
 			touchCollectionPrev = touchCollection;
 			base.Update(gameTime);
@@ -232,19 +253,29 @@ namespace Skate
 			if (trickQueue.Count == 0)
 			{
 				if (player.onGround || player.onSlope)
+				{
 					player.state = Player.State.Ground;
+				}
 				else
+				{
 					player.state = Player.State.Air;
+				}
 			}
 			else if (!player.grind)
+			{
 				player.state = Player.State.Trick;
+			}
 			else
+			{
 				player.state = Player.State.Grind;
+			}
 		}
 
 		public void PerformTrickFlip()
 		{
 			Trick.FlipTricks trick = Trick.FlipTricks.Kickflip;
+
+			player.SetAnimation("KickFlip");
 
 			if(!player.onGround)
 			{
@@ -415,7 +446,7 @@ namespace Skate
 				slopes[i].Draw(spriteBatch);
 			}
 
-			player.Draw(spriteBatch);
+			player.Draw(spriteBatch, camera);
 
 			DrawRectangle(spriteBatch, player.Rectangle, Color.Red);
 
@@ -430,7 +461,7 @@ namespace Skate
 
 			spriteBatch.DrawString(fontDebug, "Ground: " + player.onGround.ToString(), new Vector2(600, 50), Color.Black);
 			spriteBatch.DrawString(fontDebug, "Slope: " + player.onSlope.ToString(), new Vector2(600, 100), Color.Black);
-			spriteBatch.DrawString(fontDebug, "JumpCharge: " + jumpCharge.ToString(), new Vector2(600, 150), Color.Black);
+			spriteBatch.DrawString(fontDebug, "JumpCharge: " + player.jumpCharge.ToString(), new Vector2(600, 150), Color.Black);
 
 			//DrawCombo();
 
@@ -810,6 +841,47 @@ namespace Skate
 			position += movement;
 			platformIDPrev = platformPrev;
 		}
+
+		public static string FloatToString(float f)
+		{
+			string text = f.ToString();
+
+			if (text.Contains(","))
+			{
+				int insert = text.IndexOf(',');
+
+				text = text.Remove(insert, 1);
+				text = text.Insert(insert, ".");
+
+				if (insert == 1 && text.IndexOf('0') == 0)
+					text = text.Remove(0, 1);
+			}
+
+			text += "f";
+
+			return text;
+		}
+
+		public static float StringToFloat(string text)
+		{
+			char dec;
+			if (text.Contains("."))
+			{
+				dec = '.';
+			}
+			else
+				dec = ',';
+
+			string[] array = text.Split(dec);
+
+			if (array.Length < 2)
+			{
+				return int.Parse(text);
+			}
+			else return int.Parse(array[0]) + float.Parse(array[1]) / (float)Math.Pow(10, array[1].Length);
+
+		}
+
 
 		/// <summary>
 		/// Returns the point in the middle of two vector2 positions
