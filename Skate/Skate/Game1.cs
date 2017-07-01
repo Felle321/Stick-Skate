@@ -214,11 +214,15 @@ namespace Skate
 					}
 					break;
 				case TouchAction.Touch:
-					player.SetAnimation("JumpCharge");
+					if(player.state == Player.State.Ground)
+						player.SetAnimation("JumpCharge");
 					break;
 				case TouchAction.Hold:
 					if (player.jumpCharge < jumpChargeMax && player.onGround)
 					{
+						if(player.animationKey != "JumpCharge")
+							player.SetAnimation("JumpCharge");
+
 						player.jumpCharge++;
 
 						player.animation.currentFrame = (player.jumpCharge / (float)jumpChargeMax) * player.animation.framesTotal;
@@ -255,6 +259,8 @@ namespace Skate
 				if (player.onGround || player.onSlope)
 				{
 					player.state = Player.State.Ground;
+					if (player.animationKey != "Idle" && player.jumpCharge == 0)
+						player.SetAnimation("Idle");
 				}
 				else
 				{

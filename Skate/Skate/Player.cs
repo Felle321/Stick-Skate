@@ -94,9 +94,6 @@ namespace Skate
 					angle = 0;
 
 				speed *= 0.999f;
-
-				if(animationKey != "Idle" && jumpCharge <= 0 && state != State.Trick)
-					SetAnimation("Idle");
 			}
 			else
 			{
