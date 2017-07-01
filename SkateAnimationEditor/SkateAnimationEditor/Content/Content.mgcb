@@ -80,6 +80,18 @@
 /processorParam:TextureFormat=Color
 /build:pixel.png
 
+#begin board.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:board.png
+
 #begin jump.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -92,7 +104,7 @@
 /processorParam:TextureFormat=Color
 /build:jump.png
 
-#begin board.png
+#begin accelerate.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -102,5 +114,5 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:board.png
+/build:accelerate.png
 

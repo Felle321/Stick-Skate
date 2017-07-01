@@ -47,20 +47,13 @@ namespace SkateAnimationEditor
 			
 			switch (key)
 			{
-				case ("Idle"):
-					InitializeAnimation(0, 0);
-					break;
-				case ("JumpCharge"):
-					InitializeAnimation(0, 0);
-					break;
 				case ("Jump"):
-					InitializeAnimation(11, .1f);
-					keyFrames.Add(new BoardKeyFrame(0, 0, 0, -.135f, new Vector2(17, 48), false, true));
-					keyFrames.Add(new BoardKeyFrame(1, 0, 0, -.095f, new Vector2(16, 47), false, true));
-					keyFrames.Add(new BoardKeyFrame(2, 0, 0, -.2f, new Vector2(16, 46), false, true));
-					keyFrames.Add(new BoardKeyFrame(3, 0, 0, -.13f, new Vector2(19, 46), false, true));
-					keyFrames.Add(new BoardKeyFrame(5, 0, 0, .07f, new Vector2(26, 45), false, true));
-					keyFrames.Add(new BoardKeyFrame(8, 0, 0, 0, new Vector2(24, 44), false, true));
+					InitializeAnimation(14, .7f);
+					keyFrames.Add(new BoardKeyFrame(0, 0f, 0f, 0f, new Vector2(-12f, 3f), false, true));
+					keyFrames.Add(new BoardKeyFrame(5, 0f, 0f, -0.2f, new Vector2(-6f, 4f), false, true));
+					keyFrames.Add(new BoardKeyFrame(7, 0f, 0f, -0.2955556f, new Vector2(.666667f, 3.777778f), false, true));
+					keyFrames.Add(new BoardKeyFrame(10, 0f, 0f, -0.1088889f, new Vector2(-2.761905f, 2.444444f), false, true));
+					keyFrames.Add(new BoardKeyFrame(12, 0f, 0f, -0.05444444f, new Vector2(-6.380952f, -2.277778f), false, true));
 					break;
 				case ("KickFlip"):
 					InitializeAnimation(20, .5009954f);
@@ -91,7 +84,7 @@ namespace SkateAnimationEditor
 			scaleX = 0;
 			scaleY = 0;
 			rotation = 0;
-			position = new Vector2(18, 48);
+			position = new Vector2(-12f, 4f);
 			animationFreeze = false;
 			drawSimpleBoard = true;
 		}

@@ -16,7 +16,7 @@ namespace Skate
 	{
 		public enum FlipTricks
 		{
-			Kickflip
+			KickFlip
 		}
 		public enum GrabTricks
 		{
@@ -24,7 +24,7 @@ namespace Skate
 		}
 		public enum GrindTricks
 		{
-			NoseGrind
+			FiftyFifty
 		}
 		public enum Quality
 		{
@@ -96,8 +96,8 @@ namespace Skate
 
 				switch (trick)
 				{
-					case FlipTricks.Kickflip:
-						totalFrames = 15;
+					case FlipTricks.KickFlip:
+						totalFrames = 21;
 						score = 150;
 						break;
 					default:
@@ -150,8 +150,33 @@ namespace Skate
 				base.Update();
 			}
 
+			/// <summary>
+			/// Score per frame
+			/// </summary>
+			/// <returns></returns>
+			public override int GetScore()
+			{
+				switch (trick)
+				{
+					case GrindTricks.FiftyFifty:
+						return 10;
+						break;
+					default:
+						return 0;
+						break;
+				}
+			}
+
 			public override string GetName()
 			{
+
+				switch (trick)
+				{
+					case GrindTricks.FiftyFifty:
+						return "50-50";
+					default:
+						break;
+				}
 				return trick.ToString();
 			}
 		}

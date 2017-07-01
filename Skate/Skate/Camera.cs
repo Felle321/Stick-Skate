@@ -55,10 +55,20 @@ namespace Skate
 			}
 			else
 			{
-				movement.X = (target.X - pos.X) * .085f;
-				movement.Y = (target.Y - pos.Y) * .085f;
+				movement.X = (target.X - pos.X) * .12f;
+				movement.Y = (target.Y - pos.Y) * .12f;
 
 				pos += movement;
+			}
+
+			if (Math.Abs(zoomTarget - zoom) < .001)
+				zoom = zoomTarget;
+			else
+			{
+				if (zoomTarget - zoom < 0)
+					zoom -= .0005f;
+				else
+					zoom += .0005f;
 			}
 
 			shakeOffset = Vector2.Zero;

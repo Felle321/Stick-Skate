@@ -16,7 +16,7 @@ namespace Skate
 		public enum Type
 		{
 			Rectangle,
-			JumpThrough
+			Grind
 		}
 		public Type type = Type.Rectangle;
 		public Rectangle rectangle;
@@ -38,7 +38,12 @@ namespace Skate
 
 		public virtual void Draw(SpriteBatch spriteBatch)
 		{
-			Game1.DrawRectangle(spriteBatch, new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height), Color.Black);
+			if(type == Type.Rectangle)
+				Game1.DrawRectangle(spriteBatch, new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height), Color.Black);
+			else if(type == Type.Grind)
+				Game1.DrawRectangle(spriteBatch, new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height), Color.Blue);
+			else
+				Game1.DrawRectangle(spriteBatch, new Rectangle(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height), Color.Green);
 		}
 	}
 }

@@ -26,32 +26,44 @@ namespace Skate
 			{
 				case ("Idle"):
 					returnValue.animation = new Animation("Player_Idle");
-					returnValue.animation.speed = .1f;
-					returnValue.textureOffset = new Vector2(20, 43);
+					returnValue.animation.speed = .3f;
+					returnValue.textureOffset = new Vector2(0, 0);
 					returnValue.textureOrigin = new Vector2(32, 128);
 					break;
 				case ("JumpCharge"):
 					returnValue.animation = new Animation("Player_JumpCharge");
 					returnValue.animation.speed = 0;
-					returnValue.textureOffset = new Vector2(21, 42);
+					returnValue.textureOffset = new Vector2(0, 0);
 					returnValue.textureOrigin = new Vector2(32, 128);
 					break;
 				case ("Jump"):
 					returnValue.animation = new Animation("Player_Jump");
-					returnValue.animation.speed = .8f;
-					returnValue.textureOffset = new Vector2(21, 42);
+					returnValue.animation.speed = .7f;
+					returnValue.textureOffset = new Vector2(0, 0);
 					returnValue.textureOrigin = new Vector2(32, 128);
 					break;
 				case ("KickFlip"):
 					returnValue.animation = new Animation("Player_Jump");
-					returnValue.animation.speed = .8f;
-					returnValue.textureOffset = new Vector2(-1, 0);
+					returnValue.animation.speed = .7f;
+					returnValue.textureOffset = new Vector2(0, 0);
+					returnValue.textureOrigin = new Vector2(32, 128);
+					break;
+				case ("Accelerate"):
+					returnValue.animation = new Animation("Player_Accelerate");
+					returnValue.animation.speed = .7f;
+					returnValue.textureOffset = new Vector2(0, 10);
+					returnValue.textureOrigin = new Vector2(32, 128);
+					break;
+				case ("50-50"):
+				returnValue.animation = new Animation("Grind_FiftyFifty");
+					returnValue.animation.speed = .3f;
+					returnValue.textureOffset = new Vector2(0, 0);
 					returnValue.textureOrigin = new Vector2(32, 128);
 					break;
 				default:
 					returnValue.animation = new Animation("Player_Idle");
 					returnValue.animation.speed = .1f;
-					returnValue.textureOffset = new Vector2(20, 43);
+					returnValue.textureOffset = new Vector2(0, 0);
 					returnValue.textureOrigin = new Vector2(32, 128);
 					break;
 			}
@@ -66,11 +78,10 @@ namespace Skate
 		public static void LoadContent(ContentManager Content)
 		{
 			SpriteHandler.AddSprite("Player_Idle", new Sprite(Content.Load<Texture2D>("idle"), 4, 64, 128));
-			SpriteHandler.SetInfo("Player_Idle", 0.1f, 1);
 			SpriteHandler.AddSprite("Player_Jump", new Sprite(Content.Load<Texture2D>("jump"), 15, 64, 128));
-			SpriteHandler.SetInfo("Player_Jump", 0.1f, 1);
 			SpriteHandler.AddSprite("Player_JumpCharge", new Sprite(Content.Load<Texture2D>("jumpCharge"), 8, 64, 128));
-			SpriteHandler.SetInfo("Player_JumpCharge", 0.1f, 1);
+			SpriteHandler.AddSprite("Player_Accelerate", new Sprite(Content.Load<Texture2D>("accelerate"), 15, 64, 128));
+			SpriteHandler.AddSprite("Grind_FiftyFifty", new Sprite(Content.Load<Texture2D>("Grind_FiftyFifty"), 4, 64, 128));
 		}
 	}
 }

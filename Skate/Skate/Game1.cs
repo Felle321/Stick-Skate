@@ -22,7 +22,7 @@ namespace Skate
 		Player player;
 		List<Platform> platforms = new List<Platform>();
 		List<Slope> slopes = new List<Slope>();
-		public static float gravity = 1f;
+		public static float gravity = .7f;
 		float friction = .98f;
 		SpriteFont fontDebug;
 		public enum TouchAction
@@ -36,11 +36,18 @@ namespace Skate
 			Hold
 		}
 
+		List<Trick.Flip> AvailibleFlipTricks = new List<Trick.Flip>();
+		List<Trick.Grind> AvailibleGrindTricks = new List<Trick.Grind>();
+		List<Trick.Grab> AvailibleGrabTricks = new List<Trick.Grab>();
+
 		Combo combo = new Combo();
 		List<Trick> trickQueue = new List<Trick>();
 		
-		int jumpChargeMax = 30;
-		int jumpStrength = 25;
+		int jumpChargeMax = 20;
+		int jumpStrength = 18;
+
+		int tryGrind = 0;
+		int tryGrindMax = 40;
 
 		int score = 0;
 		string lastTrick = "";
@@ -110,8 +117,24 @@ namespace Skate
 		{
 			touchCollection = TouchPanel.GetState();
 
+			if (tryGrind > 0)
+				tryGrind--;
+
 			if (player.onGround)
 			{
+				if (player.grind)
+				{
+					if(combo.tricks.Count == 0)
+						combo.tricks.Add(player.GrindTrick.GetName());
+					else if (combo.tricks[combo.tricks.Count - 1] != player.GrindTrick.GetName())
+						combo.tricks.Add(player.GrindTrick.GetName());
+
+					combo.lastScore += player.GrindTrick.GetScore();
+					combo.score += player.GrindTrick.GetScore();
+					player.speed += combo.availibleSpeed;
+					combo.availibleSpeed = 0;
+				}
+
 				if (!player.onGroundPrev)
 				{
 					if (trickQueue.Count > 1)
@@ -123,6 +146,7 @@ namespace Skate
 						if (trickQueue[0].totalFrames - trickQueue[0].frame < 10)
 						{
 							combo.lastTrickEnd = combo.time + trickQueue[0].totalFrames - trickQueue[0].frame;
+							trickQueue[0].frame = trickQueue[0].totalFrames;
 						}
 						else
 						{
@@ -130,8 +154,11 @@ namespace Skate
 						}
 					}
 
-					score += combo.Finish();
-					trickQueue.Clear();
+					if (!player.grind)
+					{
+						score += combo.Finish();
+						trickQueue.Clear();
+					}
 				}
 				else
 				{
@@ -142,15 +169,19 @@ namespace Skate
 			{
 				if (trickQueue.Count > 0)
 				{
-					if (trickQueue[0].frame == trickQueue[0].totalFrames)
+					if (trickQueue[0].frame == 0)
 					{
 						combo.lastScore = trickQueue[0].GetScore();
 						combo.tricks.Add(trickQueue[0].GetName());
-						combo.score += combo.lastScore;
 						combo.multiplier++;
 						combo.availibleSpeed += trickQueue[0].GetSpeed();
-						combo.lastTrickEnd = combo.time;
 						combo.lastQuality = trickQueue[0].quality.ToString();
+						trickQueue[0].Update();
+					}
+					else if(trickQueue[0].frame == trickQueue[0].totalFrames)
+					{
+						combo.lastTrickEnd = combo.time;
+						combo.score += combo.lastScore;
 						trickQueue.RemoveAt(0);
 					}
 					else
@@ -186,7 +217,9 @@ namespace Skate
 					player.jumpCharge = 0;
 
 					if (player.onGround)
-						player.speed += 3;
+					{
+						player.SetAnimation("Accelerate");
+					}
 					else
 					{
 						PerformTrickFlip();
@@ -208,10 +241,12 @@ namespace Skate
 				case TouchAction.SwipeDown:
 					debugLastSwipe = TouchAction.SwipeDown;
 
-					if (!player.onGround)
+					if(player.state == Player.State.Air)
 					{
-						PerformTrickGrind();
+						tryGrind = tryGrindMax;
+						player.tryGrind = true;
 					}
+
 					break;
 				case TouchAction.Touch:
 					if(player.state == Player.State.Ground)
@@ -244,9 +279,10 @@ namespace Skate
 
 			player.Update();
 
-			MoveObject(ref player.position, player.Rectangle, ref player.movement, ref player.onGround, player.onGroundPrev, ref player.slope, ref player.onSlope, player.bounceFactor, ref player.platform, ref player.platformPrev, player.fallThrough);
-			
-			camera.target = player.Centre + new Vector2(200, -100);
+			MoveObject(ref player.position, player.Rectangle, ref player.movement, ref player.onGround, player.onGroundPrev, ref player.slope, ref player.onSlope, player.bounceFactor, ref player.platform, ref player.platformPrev, player.tryGrind);
+
+			camera.zoomTarget = 1.1f - (player.speed / player.maxSpeed) * .3f;
+			camera.target = player.Centre + new Vector2(600 + (player.speed / player.maxSpeed) * 200, -100);
 			camera.Update(rand);
 			touchCollectionPrev = touchCollection;
 			base.Update(gameTime);
@@ -254,17 +290,39 @@ namespace Skate
 
 		private void UpdatePlayerState()
 		{
+			if (!player.grind && tryGrind == 0)
+				player.tryGrind = false;
+
 			if (trickQueue.Count == 0)
 			{
 				if (player.onGround || player.onSlope)
 				{
 					player.state = Player.State.Ground;
-					if (player.animationKey != "Idle" && player.jumpCharge == 0)
+					if (player.animationKey != "Idle" && player.jumpCharge == 0 && (player.animationKey != "Accelerate" || (player.animationKey == "Accelerate" && player.animation.animationEnd)) && !player.grind)
+					{
 						player.SetAnimation("Idle");
+					}
+					else if (player.animationKey == "Accelerate" && (int)Math.Floor(player.animation.currentFrame) == 8)
+						player.speed += 3;
 				}
 				else
 				{
 					player.state = Player.State.Air;
+					if (player.animationKey != "Jump")
+					{
+						player.SetAnimation("Jump");
+						player.animation.currentFrame = player.animation.framesTotal;
+					}
+
+					player.grind = false;
+
+					if (player.animation.animationEnd)
+					{
+						player.animation.speed = 0;
+						player.animation.currentFrame = player.animation.framesTotal;
+						player.board.speed = 0;
+						player.board.frame = player.board.totalFrames;
+					}
 				}
 			}
 			else if (!player.grind)
@@ -279,10 +337,8 @@ namespace Skate
 
 		public void PerformTrickFlip()
 		{
-			Trick.FlipTricks trick = Trick.FlipTricks.Kickflip;
-
-			player.SetAnimation("KickFlip");
-
+			Trick.FlipTricks trick = Trick.FlipTricks.KickFlip;
+			
 			if(!player.onGround)
 			{
 				if(trickQueue.Count == 1)
@@ -298,6 +354,8 @@ namespace Skate
 					//BALANCE PENALTY
 				}
 			}
+
+			player.SetAnimation(trickQueue[0].GetName());
 		}
 
 		public void PerformTrickGrab()
@@ -307,22 +365,34 @@ namespace Skate
 
 		public void PerformTrickGrind()
 		{
+			player.GrindTrick = new Trick.Grind(Trick.GrindTricks.FiftyFifty, 1.2f - .4f * (40 / (float)tryGrind));
 
+			player.SetAnimation(player.GrindTrick.GetName());
 		}
 
 		private void GenerateTerrain()
 		{
-			if (platforms[platforms.Count - 1].rectangle.Right <= camera.rectangle.Right + 40)
+			int i = platforms.Count - 1;
+
+			if (platforms[i].type == Platform.Type.Grind)
+				i--;
+
+			if (platforms[i].rectangle.Right <= camera.rectangle.Right + 40)
 			{
 				if (rand.Next(4) == 0)
 				{
 					int height = rand.Next(240) + 40;
 					int width = rand.Next(100) + 100;
-					slopes.Add(new Slope(new Rectangle(platforms[platforms.Count - 1].rectangle.Right - width, platforms[platforms.Count - 1].rectangle.Y - height, width, height), true));
-					platforms.Add(new Platform(platforms.Count, new Rectangle(platforms[platforms.Count - 1].rectangle.Right + 1, platforms[platforms.Count - 1].rectangle.Y - height, rand.Next(400) + 500, 40), Platform.Type.Rectangle));
+					slopes.Add(new Slope(new Rectangle(platforms[i].rectangle.Right - width, platforms[i].rectangle.Y - height, width, height), true));
+					platforms.Add(new Platform(platforms.Count, new Rectangle(platforms[i].rectangle.Right + 1, platforms[i].rectangle.Y - height, rand.Next(400) + 500, 40), Platform.Type.Rectangle));
 				}
 				else
-					platforms.Add(new Platform(platforms.Count, new Rectangle(platforms[platforms.Count - 1].rectangle.Right + 1, platforms[platforms.Count - 1].rectangle.Y, rand.Next(400) + 500, 40), Platform.Type.Rectangle));
+					platforms.Add(new Platform(platforms.Count, new Rectangle(platforms[i].rectangle.Right + 1, platforms[i].rectangle.Y, rand.Next(400) + 500, 40), Platform.Type.Rectangle));
+
+				if(rand.Next(5) == 0)
+				{
+					platforms.Add(new Platform(platforms.Count, new Rectangle(platforms[platforms.Count - 1].rectangle.Left, platforms[platforms.Count - 1].rectangle.Y - 70, rand.Next(160) + 340, 40), Platform.Type.Grind));
+				}
 			}
 		}
 
@@ -454,8 +524,6 @@ namespace Skate
 
 			player.Draw(spriteBatch, camera);
 
-			DrawRectangle(spriteBatch, player.Rectangle, Color.Red);
-
 			spriteBatch.End();
 		}
 
@@ -463,13 +531,18 @@ namespace Skate
 		{
 			spriteBatch.Begin();
 
-			DrawTouches();
+			//DrawTouches();
 
 			spriteBatch.DrawString(fontDebug, "Ground: " + player.onGround.ToString(), new Vector2(600, 50), Color.Black);
 			spriteBatch.DrawString(fontDebug, "Slope: " + player.onSlope.ToString(), new Vector2(600, 100), Color.Black);
 			spriteBatch.DrawString(fontDebug, "JumpCharge: " + player.jumpCharge.ToString(), new Vector2(600, 150), Color.Black);
+			spriteBatch.DrawString(fontDebug, "TryGrind: " + tryGrind.ToString(), new Vector2(600, 200), Color.Black);
+			spriteBatch.DrawString(fontDebug, "Grind: " + player.grind.ToString(), new Vector2(600, 250), Color.Black);
+			spriteBatch.DrawString(fontDebug, "Player.TryGrind: " + player.tryGrind.ToString(), new Vector2(600, 300), Color.Black);
+			spriteBatch.DrawString(fontDebug, "AnimationKey: " + player.animationKey.ToString(), new Vector2(600, 350), Color.Black);
+			spriteBatch.DrawString(fontDebug, "State: " + player.state.ToString(), new Vector2(600, 400), Color.Black);
 
-			//DrawCombo();
+			DrawCombo();
 
 			spriteBatch.End();
 		}
@@ -515,7 +588,7 @@ namespace Skate
 		/// <param name="movement">Vector to move by</param>
 		/// <param name="onGround">OnGround bool</param>
 		/// <returns></returns>
-		public void MoveObject(ref Vector2 position, Rectangle rectangle, ref Vector2 movement, ref bool onGround, bool onGroundPrev, ref Slope slope, ref bool onSlope, float bounceFactor, ref int platformID, ref int platformIDPrev, bool fallThrough)
+		public void MoveObject(ref Vector2 position, Rectangle rectangle, ref Vector2 movement, ref bool onGround, bool onGroundPrev, ref Slope slope, ref bool onSlope, float bounceFactor, ref int platformID, ref int platformIDPrev, bool grind)
 		{
 			int platformPrev = platformIDPrev;
 			if (platformID != -1)
@@ -528,6 +601,9 @@ namespace Skate
 			Vector2 newPosition = new Vector2(position.X + movement.X, position.Y + movement.Y);
 			Rectangle oldRectangle = rectangle;
 			Rectangle newRectangle = new Rectangle(FloorAdv(newPosition.X), FloorAdv(newPosition.Y), rectangle.Width, rectangle.Height);
+
+			if (player.grind)
+				grind = true;
 
 			//Checks if we can skip the entire process
 			#region Skip
@@ -760,7 +836,7 @@ namespace Skate
 				//Checks for collision with jump-through rectangles
 				for (int j = 0; j < platforms.Count; j++)
 				{
-					if (newRectangle.Intersects(platforms[j].rectangle) && platforms[j].type == Platform.Type.JumpThrough && !fallThrough)
+					if (newRectangle.Intersects(platforms[j].rectangle) && platforms[j].type == Platform.Type.Grind && grind)
 					{
 						if (oldRectangle.Bottom - 1 < platforms[j].rectangle.Y && movement.Y > 0 && rectangle.Center.Y < platforms[j].rectangle.Center.Y)
 						{
@@ -778,9 +854,15 @@ namespace Skate
 				{
 					for (int i = 0; i < platforms.Count; i++)
 					{
-						if (new Rectangle((int)(newPosition.X), (int)(newPosition.Y + 1), rectangle.Width, rectangle.Height).Intersects(platforms[i].rectangle) && (platforms[i].type == Platform.Type.Rectangle || !fallThrough))
+						if (new Rectangle((int)(newPosition.X), (int)(newPosition.Y + 1), rectangle.Width, rectangle.Height).Intersects(platforms[i].rectangle) && (platforms[i].type == Platform.Type.Rectangle ||(platforms[i].type == Platform.Type.Grind && grind)))
 						{
 							onGround = true;
+							if (platforms[i].type == Platform.Type.Grind)
+							{
+								if (!player.grind)
+									PerformTrickGrind();
+								player.grind = true;
+							}
 							platformID = i;
 							movement.Y = 0;
 							position.Y = platforms[i].rectangle.Y - rectangle.Height;

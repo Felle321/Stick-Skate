@@ -25,11 +25,14 @@ namespace Skate
 		}
 		public float speed = 25f;
 		public Vector2 movement;
-		public bool onGround, onGroundPrev, onSlope, grind, fallThrough = false;
+		public bool onGround, onGroundPrev, onSlope, tryGrind, grind = false;
 		public Slope slope;
 		public int solidRef, platform, platformPrev;
 		public float bounceFactor = 0f;
-		int minSpeed = 8;
+		public int minSpeed = 8;
+		public int maxSpeed = 25;
+
+		public Trick.Grind GrindTrick = null;
 
 		//AnimationHandling
 		public PlayerAnimation playerAnimations = new PlayerAnimation();
@@ -93,7 +96,8 @@ namespace Skate
 				else
 					angle = 0;
 
-				speed *= 0.999f;
+				if(!grind)
+					speed *= 0.99999f;
 			}
 			else
 			{
@@ -124,10 +128,6 @@ namespace Skate
 		public void Draw(SpriteBatch spriteBatch, Camera camera)
 		{
 			animation.Draw(spriteBatch, camera, ContactPos + textureOffset, 1, angle, textureOrigin, color, 1, SpriteEffects.None, 0f);
-
-
-			spriteBatch.Draw(Game1.pixel, ContactPos + textureOffset + textureOrigin, null, Color.Red, 0, Vector2.Zero, 4, SpriteEffects.None, 0f);
-
 
 			board.Draw(ContactPos, spriteBatch, camera, position);
 		}

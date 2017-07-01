@@ -72,7 +72,7 @@ namespace SkateAnimationEditor
 			player.playerAnimations.LoadContent(Content);
 			player.board.LoadContent(Content);
 
-			player.SetAnimation("KickFlip");
+			player.SetAnimation("Accelerate");
 		}
 
 		public static string FloatToString(float f)
